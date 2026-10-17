@@ -50,6 +50,16 @@ async fn assert_screenshot(page: &Page, name: &str) {
     }
 }
 
+/// Opens a notes page and waits for htmx to load its content.
+async fn open_notes(path: &str, cookies: &[(&str, &str)]) -> ui::Ui {
+    let ui = open(path, cookies).await;
+    expect(ui.page.locator("#notes [role=tablist]"))
+        .to_be_visible()
+        .await
+        .unwrap();
+    ui
+}
+
 #[tokio::test]
 #[ignore = "needs a Playwright browser: make visual"]
 async fn charts() {
@@ -81,14 +91,14 @@ async fn versions() {
 #[tokio::test]
 #[ignore = "needs a Playwright browser: make visual"]
 async fn notes_upgrade() {
-    let ui = open("/alloy?from=1.3.0&to=1.4.0", &[]).await;
+    let ui = open_notes("/alloy?from=1.3.0&to=1.4.0", &[]).await;
     assert_screenshot(&ui.page, "notes-upgrade").await;
 }
 
 #[tokio::test]
 #[ignore = "needs a Playwright browser: make visual"]
 async fn notes_with_note_dark() {
-    let ui = open(
+    let ui = open_notes(
         "/kube-prometheus-stack?from=78.5.0&to=79.1.0",
         &[("chart_notes_theme", "dark")],
     )
@@ -99,21 +109,21 @@ async fn notes_with_note_dark() {
 #[tokio::test]
 #[ignore = "needs a Playwright browser: make visual"]
 async fn notes_downgrade() {
-    let ui = open("/alloy?from=1.4.0&to=1.3.1", &[]).await;
+    let ui = open_notes("/alloy?from=1.4.0&to=1.3.1", &[]).await;
     assert_screenshot(&ui.page, "notes-downgrade").await;
 }
 
 #[tokio::test]
 #[ignore = "needs a Playwright browser: make visual"]
 async fn notes_same_app_version() {
-    let ui = open("/alloy?from=1.2.0&to=1.2.1", &[]).await;
+    let ui = open_notes("/alloy?from=1.2.0&to=1.2.1", &[]).await;
     assert_screenshot(&ui.page, "notes-same").await;
 }
 
 #[tokio::test]
 #[ignore = "needs a Playwright browser: make visual"]
 async fn notes_github_down() {
-    let ui = open("/traefik?from=37.1.2&to=37.2.0", &[]).await;
+    let ui = open_notes("/traefik?from=37.1.2&to=37.2.0", &[]).await;
     assert_screenshot(&ui.page, "notes-github-down").await;
 }
 
@@ -139,4 +149,39 @@ async fn command_palette() {
         .await
         .unwrap();
     assert_screenshot(&ui.page, "command-palette").await;
+}
+
+#[tokio::test]
+#[ignore = "needs a Playwright browser: make visual"]
+async fn values_diff_tab() {
+    let ui = open_notes("/alloy?from=1.3.0&to=1.4.0", &[]).await;
+    ui.page
+        .locator("[role=tab][data-tab=values]")
+        .click(None)
+        .await
+        .unwrap();
+    expect(
+        ui.page
+            .locator("[role=tab][data-tab=values][aria-selected=true]"),
+    )
+    .to_be_visible()
+    .await
+    .unwrap();
+    // The tab has its own URL, so the back button and links work.
+    expect_page(&ui.page)
+        .to_have_url_regex(r"/alloy\?from=1\.3\.0&to=1\.4\.0&.*tab=values$")
+        .await
+        .unwrap();
+    assert_screenshot(&ui.page, "values-diff").await;
+}
+
+#[tokio::test]
+#[ignore = "needs a Playwright browser: make visual"]
+async fn chart_tab_dark() {
+    let ui = open_notes(
+        "/alloy?from=1.3.0&to=1.4.0&tab=chart",
+        &[("chart_notes_theme", "dark")],
+    )
+    .await;
+    assert_screenshot(&ui.page, "notes-chart-tab-dark").await;
 }

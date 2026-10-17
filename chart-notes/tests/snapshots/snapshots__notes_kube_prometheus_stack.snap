@@ -205,27 +205,6 @@ expression: html
         <span class="text-muted-foreground">Chart from <code class="text-xs">prometheus-community.github.io</code></span>
       </div>
     </div>
-    
-    <a class="btn" data-variant="outline" href="https://github.com/prometheus-operator/prometheus-operator/compare/v0.86.0...v0.86.1" target="_blank" rel="noopener noreferrer">
-      <svg
-  aria-hidden="true"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <circle cx="18" cy="18" r="3" />
-  <circle cx="6" cy="6" r="3" />
-  <path d="M13 6h3a2 2 0 0 1 2 2v7" />
-  <path d="M11 18H8a2 2 0 0 1-2-2V9" />
-</svg> Full app diff
-    </a>
-    
   </div>
 
   
@@ -252,19 +231,47 @@ expression: html
 
 
   
+  <div id="notes" class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-end justify-between gap-x-3 border-b">
+  <nav role="tablist" aria-label="What changed" class="tab-bar">
+    
+    <a role="tab" data-tab="all" href="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts" hx-get="/kube-prometheus-stack/timeline?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=all" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts" aria-selected="true" aria-current="page">
+      All <span class="tab-count">· 3</span>
+    </a>
+    
+    <a role="tab" data-tab="app" href="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=app" hx-get="/kube-prometheus-stack/timeline?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=app" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=app" aria-selected="false">
+      App <span class="tab-count">· 1</span>
+    </a>
+    
+    <a role="tab" data-tab="chart" href="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=chart" hx-get="/kube-prometheus-stack/timeline?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=chart" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=chart" aria-selected="false">
+      Chart <span class="tab-count">· 2</span>
+    </a>
+    
+    <a role="tab" data-tab="values" href="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=values" hx-get="/kube-prometheus-stack/values?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/kube-prometheus-stack?from=78.5.0&#38;to=79.1.0&#38;source=https%3A%2F%2Fgithub.com%2Fprometheus-community%2Fhelm-charts&#38;repo=https%3A%2F%2Fprometheus-community.github.io%2Fhelm-charts&#38;tab=values" aria-selected="false">
+      Values diff
+    </a>
+    
+  </nav>
+</div>
+
+  
+  
+
+  
+  
+  
+  
 
   
 
-  <div class="flex flex-col gap-3">
-    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
-      Chart changes
-      <span class="text-muted-foreground font-normal">· 2 chart releases</span>
-      <span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">prometheus-community/helm-charts</code></span>
-    </h2>
+  <ol class="timeline">
     
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      <div class="timeline-date" title="2026-10-12">5d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -278,11 +285,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">kube-prometheus-stack-79.1.0</span>
-        <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v0.86.1</code></span>
-        <span class="text-sm text-muted-foreground" title="2026-10-12">5d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/prometheus-community/helm-charts/releases/tag/kube-prometheus-stack-79.1.0" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="chart">Chart</span>
+          <span class="font-semibold">kube-prometheus-stack-79.1.0</span>
+          <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v0.86.1</code></span>
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/prometheus-community/helm-charts/releases/tag/kube-prometheus-stack-79.1.0" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -298,18 +305,24 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <p class="text-sm text-muted-foreground">No changes listed for this chart version.</p>
-        
-      </div>
-    </details>
+          
+        </summary>
+        <div class="release-body">
+          
+          <p class="text-sm text-muted-foreground">No changes listed for this chart version.</p>
+          
+        </div>
+      </details>
+      
+      
+    </li>
     
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      <div class="timeline-date" title="2026-10-05">12d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -323,11 +336,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">kube-prometheus-stack-79.0.2</span>
-        <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v0.86.1</code></span>
-        <span class="text-sm text-muted-foreground" title="2026-10-05">12d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/prometheus-community/helm-charts/releases/tag/kube-prometheus-stack-79.0.2" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="chart">Chart</span>
+          <span class="font-semibold">kube-prometheus-stack-79.0.2</span>
+          <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v0.86.1</code></span>
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/prometheus-community/helm-charts/releases/tag/kube-prometheus-stack-79.0.2" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -343,28 +356,25 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <p class="text-sm text-muted-foreground">No changes listed for this chart version.</p>
-        
-      </div>
-    </details>
+          
+        </summary>
+        <div class="release-body">
+          
+          <p class="text-sm text-muted-foreground">No changes listed for this chart version.</p>
+          
+        </div>
+      </details>
+      
+      
+    </li>
     
-  </div>
-
-  
-  <div class="flex flex-col gap-3">
-    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
-      App release notes
-      <span class="text-muted-foreground font-normal">· 1 release</span>
-      <span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">prometheus-operator/prometheus-operator</code></span>
-    </h2>
-    
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      
+      <div class="timeline-date" title="2026-10-03">14d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -378,11 +388,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">v0.86.1</span>
-        
-        <span class="text-sm text-muted-foreground" title="2026-10-03">14d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.86.1" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="app">App</span>
+          <span class="font-semibold">v0.86.1</span>
+          
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/prometheus-operator/prometheus-operator/releases/tag/v0.86.1" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -398,21 +408,27 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <div class="prose prose-sm dark:prose-invert max-w-none"><ul>
+          
+        </summary>
+        <div class="release-body">
+          
+          <div class="prose prose-sm dark:prose-invert max-w-none"><ul>
 <li>[BUGFIX] Fix the <code>ScrapeConfig</code> reconciliation when the namespace selector is empty. <a href="https://github.com/prometheus-operator/prometheus-operator/pull/7900" target="_blank" rel="noopener noreferrer nofollow">#7900</a></li>
 </ul></div>
-        
-      </div>
-    </details>
+          
+        </div>
+      </details>
+      
+    </li>
     
-  </div>
-  
+  </ol>
 
-  <p class="text-xs text-muted-foreground">Fetched 4h ago. Pre-releases are left out.</p>
+  <p class="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+    <span>Fetched 4h ago. App pre-releases are left out.</span>
+    <a class="underline underline-offset-4 hover:text-foreground" href="https://github.com/prometheus-operator/prometheus-operator/compare/v0.86.0...v0.86.1" target="_blank" rel="noopener noreferrer">Full app diff</a>
+  </p>
+</div>
+  
 </div>
 
   </main>

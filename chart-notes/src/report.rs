@@ -326,3 +326,90 @@ async fn chart_releases(
         .collect();
     (releases, error)
 }
+
+/// What the page header needs: quick once the chart's index is cached.
+#[derive(Debug, Clone)]
+pub struct Header {
+    pub chart: Resolved,
+    pub from: ChartVersion,
+    pub to: ChartVersion,
+    pub direction: Direction,
+}
+
+pub async fn header(
+    resolver: &Resolver,
+    sources: &dyn Sources,
+    name: &str,
+    hints: &Hints,
+    from: &str,
+    to: &str,
+) -> Result<Header, ReportError> {
+    let chart = locate(resolver, name, hints).await?;
+    let index = sources
+        .index(&chart.repo, name)
+        .await
+        .map_err(|e| ReportError::Upstream(e.to_string()))?;
+    let missing = |version: &str| {
+        ReportError::UnknownVersion(format!(
+            "{name} has no version {version:?} in {}.",
+            crate::sources::index_url(&chart.repo)
+        ))
+    };
+    let old = index.value.find(from).ok_or_else(|| missing(from))?.clone();
+    let new = index.value.find(to).ok_or_else(|| missing(to))?.clone();
+    let direction = match (&old.app_version, &new.app_version) {
+        (Some(a), Some(b)) => notes::direction(a, b),
+        _ => Direction::Unknown,
+    };
+    Ok(Header {
+        chart,
+        from: old,
+        to: new,
+        direction,
+    })
+}
+
+/// The default values' change between the two versions.
+#[derive(Debug, Clone)]
+pub struct ValuesDiff {
+    pub summary: crate::values::Summary,
+    pub hunks: Vec<crate::values::Hunk>,
+    /// Why a side couldn't be read, if one couldn't.
+    pub error: Option<String>,
+}
+
+async fn read_values(
+    sources: &dyn Sources,
+    chart: &Resolved,
+    v: &ChartVersion,
+) -> Result<String, String> {
+    let Some(package) = &v.url else {
+        return Err(format!("{} {} lists no package", chart.name, v.version));
+    };
+    match sources
+        .values(&chart.repo, &chart.name, &v.version, package)
+        .await
+    {
+        Ok(c) => Ok(c.value.text.clone().unwrap_or_default()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+pub async fn values_diff(sources: &dyn Sources, header: &Header) -> ValuesDiff {
+    let (old, new) = futures::join!(
+        read_values(sources, &header.chart, &header.from),
+        read_values(sources, &header.chart, &header.to)
+    );
+    match (old, new) {
+        (Ok(a), Ok(b)) => ValuesDiff {
+            summary: crate::values::summarize(&a, &b),
+            hunks: crate::values::diff(&a, &b),
+            error: None,
+        },
+        (Err(e), _) | (_, Err(e)) => ValuesDiff {
+            summary: Default::default(),
+            hunks: Vec::new(),
+            error: Some(e),
+        },
+    }
+}

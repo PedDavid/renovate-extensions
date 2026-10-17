@@ -312,3 +312,65 @@ async fn artifact_hub_search() {
             .contains(r#"upstream="artifacthub",result="ok"} 1"#)
     );
 }
+
+fn package(values: &str) -> Vec<u8> {
+    let mut tgz = Vec::new();
+    {
+        let gz = flate2::write::GzEncoder::new(&mut tgz, flate2::Compression::fast());
+        let mut tar = tar::Builder::new(gz);
+        let mut header = tar::Header::new_gnu();
+        header.set_size(values.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        tar.append_data(&mut header, "alloy/values.yaml", values.as_bytes())
+            .unwrap();
+        tar.into_inner().unwrap().finish().unwrap();
+    }
+    tgz
+}
+
+#[tokio::test]
+async fn values_from_a_package_relative_to_the_repository() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/charts/alloy-1.0.0.tgz"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(package("replicas: 1\n")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let (sources, _) = sources(&server, None, Duration::from_secs(60));
+    let v = sources
+        .values(&repo(&server), "alloy", "1.0.0", "alloy-1.0.0.tgz")
+        .await
+        .unwrap();
+    assert_eq!(v.value.text.as_deref(), Some("replicas: 1\n"));
+    // A published package doesn't change: cached.
+    sources
+        .values(&repo(&server), "alloy", "1.0.0", "alloy-1.0.0.tgz")
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn oversized_and_non_http_packages_are_refused() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/charts/huge.tgz"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(vec![0u8; 21 * 1024 * 1024]))
+        .mount(&server)
+        .await;
+    let (sources, _) = sources(&server, None, Duration::from_secs(60));
+    let err = sources
+        .values(&repo(&server), "alloy", "9.9.9", "huge.tgz")
+        .await
+        .unwrap_err();
+    assert!(err.to_string().contains("over 20 MB"), "{err}");
+    let err = sources
+        .values(&repo(&server), "alloy", "1.0.1", "file:///etc/passwd")
+        .await
+        .unwrap_err();
+    assert!(
+        err.to_string().contains("not an http(s) package URL"),
+        "{err}"
+    );
+}

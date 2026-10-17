@@ -6,29 +6,7 @@ expression: html
 <div role="group" aria-labelledby="command-charts">
   <span role="presentation" class="command-heading" id="command-charts">Charts</span>
   
-  <a role="option" id="command-option-1" href="/alloy" aria-selected="true" class="active">
-    <svg
-  aria-hidden="true"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
-  <path d="M12 22V12" />
-  <polyline points="3.29 7 12 12 20.71 7" />
-  <path d="m7.5 4.27 9 5.15" />
-</svg>
-    <span class="truncate">alloy</span>
-    <span class="ms-auto truncate" data-shortcut>grafana/alloy</span>
-  </a>
-  
-  <a role="option" id="command-option-2" href="/kube-prometheus-stack" aria-selected="false">
+  <a role="option" id="command-option-1" href="/kube-prometheus-stack" aria-selected="true" class="active">
     <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
@@ -47,10 +25,10 @@ expression: html
   <path d="m7.5 4.27 9 5.15" />
 </svg>
     <span class="truncate">kube-prometheus-stack</span>
-    <span class="ms-auto truncate" data-shortcut>prometheus-operator/prometheus-operator</span>
+    <span class="ms-auto truncate" data-shortcut>overridden</span>
   </a>
   
-  <a role="option" id="command-option-3" href="/offline" aria-selected="false">
+  <a role="option" id="command-option-2" href="/offline" aria-selected="false">
     <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
@@ -69,29 +47,7 @@ expression: html
   <path d="m7.5 4.27 9 5.15" />
 </svg>
     <span class="truncate">offline</span>
-    <span class="ms-auto truncate" data-shortcut>example/offline</span>
-  </a>
-  
-  <a role="option" id="command-option-4" href="/traefik" aria-selected="false">
-    <svg
-  aria-hidden="true"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
-  <path d="M12 22V12" />
-  <polyline points="3.29 7 12 12 20.71 7" />
-  <path d="m7.5 4.27 9 5.15" />
-</svg>
-    <span class="truncate">traefik</span>
-    <span class="ms-auto truncate" data-shortcut>traefik/traefik</span>
+    <span class="ms-auto truncate" data-shortcut>overridden</span>
   </a>
   
 </div>

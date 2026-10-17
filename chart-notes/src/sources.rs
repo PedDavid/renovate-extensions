@@ -1,5 +1,7 @@
 //! Where the data comes from: each Helm repository's `index.yaml` (which app
-//! version every chart version ships) and the app's GitHub releases.
+//! version every chart version ships, and the chart's own changes), the
+//! app's and the chart's GitHub releases, and Artifact Hub for finding which
+//! Helm repository a chart is in.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -13,10 +15,10 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::cache::{Cache, Cached};
-use crate::charts::Chart;
 use crate::metrics::Metrics;
 
 pub const GITHUB_API: &str = "https://api.github.com/";
+pub const ARTIFACT_HUB: &str = "https://artifacthub.io/";
 
 /// Releases come newest-created first, with backports to older lines mixed
 /// in; this many pages of 100 reach well past any bump Renovate would offer.
@@ -38,42 +40,62 @@ pub enum UpstreamError {
 }
 
 /// One chart version in a Helm repository.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct ChartVersion {
     pub version: String,
     /// Absent when the chart doesn't declare one.
     pub app_version: Option<String>,
     pub created: Option<Timestamp>,
+    pub home: Option<String>,
+    pub sources: Vec<String>,
+    /// The first download URL.
+    pub url: Option<String>,
+    /// The raw `artifacthub.io/changes` annotation.
+    pub changes: Option<String>,
 }
 
-/// A Helm repository's index: every chart's versions, in the index's order.
+/// One chart's versions in a Helm repository's index, in the index's order
+/// (newest first, by convention).
 #[derive(Debug, Default)]
-pub struct HelmIndex {
-    pub charts: HashMap<String, Vec<ChartVersion>>,
+pub struct ChartIndex {
+    pub versions: Vec<ChartVersion>,
     etag: Option<String>,
 }
 
-impl HelmIndex {
-    pub fn new(charts: HashMap<String, Vec<ChartVersion>>) -> Self {
-        HelmIndex { charts, etag: None }
-    }
-
-    pub fn versions(&self, chart: &str) -> &[ChartVersion] {
-        self.charts
-            .get(chart)
-            .map(Vec::as_slice)
-            .unwrap_or_default()
+impl ChartIndex {
+    pub fn new(versions: Vec<ChartVersion>) -> Self {
+        ChartIndex {
+            versions,
+            etag: None,
+        }
     }
 
     /// A chart version, with or without its "v". A `+` (build metadata)
     /// reaches us as a space when the PR template doesn't encode it.
-    pub fn find(&self, chart: &str, version: &str) -> Option<&ChartVersion> {
+    pub fn find(&self, version: &str) -> Option<&ChartVersion> {
         let bare = |v: &str| v.strip_prefix('v').unwrap_or(v).replace(' ', "+");
         let wanted = bare(version);
-        self.versions(chart)
-            .iter()
-            .find(|v| bare(&v.version) == wanted)
+        self.versions.iter().find(|v| bare(&v.version) == wanted)
     }
+
+    /// The source URL Renovate shows for this chart (its `{{sourceUrl}}`).
+    pub fn renovate_source_url(&self) -> Option<String> {
+        self.versions
+            .first()
+            .and_then(crate::resolve::renovate_source_url)
+    }
+}
+
+/// A Helm repository Artifact Hub lists a chart of the searched name in.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Candidate {
+    /// The repository's URL, serving `index.yaml`.
+    pub repo: Url,
+    /// Artifact Hub's name for the repository.
+    pub name: String,
+    pub display_name: String,
+    pub official: bool,
+    pub verified: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -130,7 +152,10 @@ struct RawNotes {
 
 #[async_trait]
 pub trait Sources: Send + Sync {
-    async fn index(&self, chart: &Chart) -> Result<Cached<HelmIndex>, UpstreamError>;
+    /// `chart`'s versions in the Helm repository at `repo`.
+    async fn index(&self, repo: &Url, chart: &str) -> Result<Cached<ChartIndex>, UpstreamError>;
+    /// The Helm repositories Artifact Hub lists a chart named `chart` in.
+    async fn search(&self, chart: &str) -> Result<Cached<Vec<Candidate>>, UpstreamError>;
     async fn releases(&self, app: &str) -> Result<Cached<Releases>, UpstreamError>;
     /// The notes of the release tagged `tag`.
     async fn notes(&self, app: &str, tag: &str) -> Result<Cached<ReleaseNotes>, UpstreamError>;
@@ -141,7 +166,9 @@ pub struct HttpSources {
     http: reqwest::Client,
     github_api: Url,
     github_token: Option<String>,
-    indexes: Cache<HelmIndex>,
+    artifact_hub: Url,
+    indexes: Cache<ChartIndex>,
+    searches: Cache<Vec<Candidate>>,
     releases: Cache<Releases>,
     notes: Cache<ReleaseNotes>,
     metrics: Arc<Metrics>,
@@ -151,6 +178,7 @@ impl HttpSources {
     pub fn new(
         github_api: Url,
         github_token: Option<String>,
+        artifact_hub: Url,
         ttl: Duration,
         metrics: Arc<Metrics>,
     ) -> anyhow::Result<Self> {
@@ -163,7 +191,11 @@ impl HttpSources {
             http,
             github_api,
             github_token: github_token.filter(|t| !t.trim().is_empty()),
-            indexes: Cache::new(ttl),
+            artifact_hub,
+            // Keyed by repository and chart: drop charts nobody asks about.
+            indexes: Cache::new(ttl).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
+            // Which repositories carry a chart changes rarely.
+            searches: Cache::new(ttl * 36).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
             releases: Cache::new(ttl),
             // One entry per release looked at: drop the ones nobody reads.
             notes: Cache::new(ttl).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
@@ -230,8 +262,9 @@ impl HttpSources {
     async fn fetch_index(
         &self,
         url: &str,
-        previous: Option<Arc<HelmIndex>>,
-    ) -> Result<HelmIndex, UpstreamError> {
+        chart: &str,
+        previous: Option<Arc<ChartIndex>>,
+    ) -> Result<ChartIndex, UpstreamError> {
         let mut headers = HeaderMap::new();
         if let Some(etag) = previous.as_ref().and_then(|p| p.etag.as_deref())
             && let Ok(v) = HeaderValue::from_str(etag)
@@ -242,8 +275,8 @@ impl HttpSources {
         if res.status() == StatusCode::NOT_MODIFIED
             && let Some(previous) = previous
         {
-            return Ok(HelmIndex {
-                charts: previous.charts.clone(),
+            return Ok(ChartIndex {
+                versions: previous.versions.clone(),
                 etag: previous.etag.clone(),
             });
         }
@@ -252,8 +285,10 @@ impl HttpSources {
             url: url.to_string(),
             message: error_chain(&e),
         })?;
-        // Some indexes run to tens of megabytes: parse off the async runtime.
-        let charts = tokio::task::spawn_blocking(move || parse_index(&body))
+        // Some indexes run to tens of megabytes: parse off the async runtime,
+        // and keep only the chart asked for.
+        let chart = chart.to_string();
+        let versions = tokio::task::spawn_blocking(move || parse_index(&body, &chart))
             .await
             .map_err(|e| UpstreamError::Parse {
                 url: url.to_string(),
@@ -263,7 +298,7 @@ impl HttpSources {
                 url: url.to_string(),
                 message: e.to_string(),
             })?;
-        Ok(HelmIndex { charts, etag })
+        Ok(ChartIndex { versions, etag })
     }
 
     fn github_headers(&self, accept: &'static str) -> HeaderMap {
@@ -386,13 +421,96 @@ impl HttpSources {
     }
 }
 
+impl HttpSources {
+    async fn fetch_search(&self, chart: &str) -> Result<Vec<Candidate>, UpstreamError> {
+        let mut url = self
+            .artifact_hub
+            .join("api/v1/packages/search")
+            .map_err(|e| UpstreamError::Request {
+                url: self.artifact_hub.to_string(),
+                message: e.to_string(),
+            })?;
+        // kind 0: Helm charts.
+        url.query_pairs_mut()
+            .append_pair("ts_query_web", chart)
+            .append_pair("kind", "0")
+            .append_pair("limit", "60");
+        let url = url.to_string();
+        let mut headers = HeaderMap::new();
+        headers.insert(header::ACCEPT, HeaderValue::from_static("application/json"));
+        let res = self.send("artifacthub", &url, headers).await?;
+        let raw: RawSearch = res.json().await.map_err(|e| UpstreamError::Parse {
+            url: url.clone(),
+            message: error_chain(&e),
+        })?;
+        Ok(candidates(raw, chart))
+    }
+}
+
+#[derive(Deserialize)]
+struct RawSearch {
+    #[serde(default)]
+    packages: Vec<RawPackage>,
+}
+
+#[derive(Deserialize)]
+struct RawPackage {
+    name: String,
+    repository: RawRepository,
+}
+
+#[derive(Deserialize)]
+struct RawRepository {
+    url: String,
+    name: String,
+    #[serde(default)]
+    display_name: Option<String>,
+    #[serde(default)]
+    official: bool,
+    #[serde(default)]
+    verified_publisher: bool,
+}
+
+/// The search's exact-name matches in plain http(s) Helm repositories
+/// (OCI ones are out of scope), official and verified ones first.
+fn candidates(raw: RawSearch, chart: &str) -> Vec<Candidate> {
+    let mut found: Vec<Candidate> = raw
+        .packages
+        .into_iter()
+        .filter(|p| p.name == chart)
+        .filter_map(|p| {
+            let repo = Url::parse(&p.repository.url).ok()?;
+            matches!(repo.scheme(), "https" | "http").then(|| Candidate {
+                repo,
+                display_name: p
+                    .repository
+                    .display_name
+                    .filter(|d| !d.trim().is_empty())
+                    .unwrap_or_else(|| p.repository.name.clone()),
+                name: p.repository.name,
+                official: p.repository.official,
+                verified: p.repository.verified_publisher,
+            })
+        })
+        .collect();
+    found.sort_by_key(|c| (!c.official, !c.verified));
+    found.dedup_by(|a, b| a.repo == b.repo);
+    found
+}
+
 #[async_trait]
 impl Sources for HttpSources {
-    async fn index(&self, chart: &Chart) -> Result<Cached<HelmIndex>, UpstreamError> {
-        let url = chart.index_url();
+    async fn index(&self, repo: &Url, chart: &str) -> Result<Cached<ChartIndex>, UpstreamError> {
+        let url = index_url(repo);
         self.indexes
-            .get(&url, |previous| self.fetch_index(&url, previous))
+            .get(&format!("{url}#{chart}"), |previous| {
+                self.fetch_index(&url, chart, previous)
+            })
             .await
+    }
+
+    async fn search(&self, chart: &str) -> Result<Cached<Vec<Candidate>>, UpstreamError> {
+        self.searches.get(chart, |_| self.fetch_search(chart)).await
     }
 
     async fn releases(&self, app: &str) -> Result<Cached<Releases>, UpstreamError> {
@@ -408,6 +526,11 @@ impl Sources for HttpSources {
             })
             .await
     }
+}
+
+/// Where a Helm repository serves its index.
+pub fn index_url(repo: &Url) -> String {
+    format!("{}/index.yaml", repo.as_str().trim_end_matches('/'))
 }
 
 fn header_i64(headers: &HeaderMap, name: &str) -> Option<i64> {
@@ -450,6 +573,14 @@ struct RawEntry {
     app_version: Option<serde_yaml::Value>,
     #[serde(default)]
     created: Option<String>,
+    #[serde(default)]
+    home: Option<serde_yaml::Value>,
+    #[serde(default)]
+    sources: Option<Vec<serde_yaml::Value>>,
+    #[serde(default)]
+    urls: Option<Vec<serde_yaml::Value>>,
+    #[serde(default)]
+    annotations: Option<HashMap<String, serde_yaml::Value>>,
 }
 
 /// An unquoted `appVersion: 2` comes through as a number.
@@ -461,23 +592,33 @@ fn scalar(v: Option<serde_yaml::Value>) -> Option<String> {
     }
 }
 
-pub fn parse_index(body: &[u8]) -> Result<HashMap<String, Vec<ChartVersion>>, serde_yaml::Error> {
-    let raw: RawIndex = serde_yaml::from_slice(body)?;
+/// `chart`'s versions in a Helm repository index.
+pub fn parse_index(body: &[u8], chart: &str) -> Result<Vec<ChartVersion>, serde_yaml::Error> {
+    let mut raw: RawIndex = serde_yaml::from_slice(body)?;
+    let strings = |v: Option<Vec<serde_yaml::Value>>| -> Vec<String> {
+        v.unwrap_or_default()
+            .into_iter()
+            .filter_map(|s| scalar(Some(s)))
+            .collect()
+    };
     Ok(raw
         .entries
+        .remove(chart)
+        .unwrap_or_default()
         .into_iter()
-        .map(|(name, entries)| {
-            let versions = entries
-                .into_iter()
-                .filter_map(|e| {
-                    Some(ChartVersion {
-                        version: scalar(e.version)?,
-                        app_version: scalar(e.app_version),
-                        created: e.created.and_then(|c| c.parse().ok()),
-                    })
-                })
-                .collect();
-            (name, versions)
+        .filter_map(|e| {
+            Some(ChartVersion {
+                version: scalar(e.version)?,
+                app_version: scalar(e.app_version),
+                created: e.created.and_then(|c| c.parse().ok()),
+                home: scalar(e.home),
+                sources: strings(e.sources),
+                url: strings(e.urls).into_iter().next(),
+                changes: e
+                    .annotations
+                    .and_then(|mut a| a.remove("artifacthub.io/changes"))
+                    .and_then(|c| scalar(Some(c))),
+            })
         })
         .collect())
 }
@@ -489,9 +630,8 @@ mod tests {
     const FIXTURE: &[u8] = include_bytes!("../tests/fixtures/index.yaml");
 
     fn app_versions(chart: &str) -> Vec<(String, Option<String>)> {
-        let index = HelmIndex::new(parse_index(FIXTURE).unwrap());
-        index
-            .versions(chart)
+        parse_index(FIXTURE, chart)
+            .unwrap()
             .iter()
             .map(|v| (v.version.clone(), v.app_version.clone()))
             .collect()
@@ -517,20 +657,63 @@ mod tests {
             [pair("2.4.0", "2.4.0"), pair("2.3.1", "2.3.1")]
         );
         assert_eq!(app_versions("loki"), [pair("18.17.0", "3.7.8")]);
-        let numbers =
-            parse_index(b"entries:\n  x:\n  - version: 1.0.0\n    appVersion: 2\n").unwrap();
-        assert_eq!(numbers["x"][0].app_version.as_deref(), Some("2"));
+        let numbers = parse_index(
+            b"entries:\n  x:\n  - version: 1.0.0\n    appVersion: 2\n",
+            "x",
+        )
+        .unwrap();
+        assert_eq!(numbers[0].app_version.as_deref(), Some("2"));
     }
 
     #[test]
     fn created_and_lookup() {
-        let index = HelmIndex::new(parse_index(FIXTURE).unwrap());
-        let v = index.find("alloy", "v1.13.1").unwrap();
+        let index = ChartIndex::new(parse_index(FIXTURE, "alloy").unwrap());
+        let v = index.find("v1.13.1").unwrap();
         assert_eq!(v.created, Some("2026-10-08T17:41:54.542Z".parse().unwrap()));
-        assert!(index.find("alloy", "9.9.9").is_none());
+        assert!(index.find("9.9.9").is_none());
         let plus =
-            HelmIndex::new(parse_index(b"entries:\n  x:\n  - version: 1.0.0+up2\n").unwrap());
-        assert!(plus.find("x", "1.0.0 up2").is_some());
-        assert!(index.versions("tempo").is_empty());
+            ChartIndex::new(parse_index(b"entries:\n  x:\n  - version: 1.0.0+up2\n", "x").unwrap());
+        assert!(plus.find("1.0.0 up2").is_some());
+        assert!(parse_index(FIXTURE, "tempo").unwrap().is_empty());
+    }
+
+    #[test]
+    fn keeps_what_resolution_and_chart_notes_need() {
+        let alloy = parse_index(FIXTURE, "alloy").unwrap();
+        let v = &alloy[0];
+        assert_eq!(v.home.as_deref(), Some("https://grafana.com/oss/alloy"));
+        assert_eq!(
+            v.sources,
+            [
+                "https://github.com/grafana/alloy",
+                "https://github.com/grafana/helm-charts"
+            ]
+        );
+        assert!(
+            v.url
+                .as_deref()
+                .unwrap()
+                .contains("/releases/download/alloy-1.13.1/")
+        );
+        assert!(v.changes.as_deref().unwrap().contains("extraPorts"));
+        assert!(alloy[1].changes.is_none());
+    }
+
+    #[test]
+    fn search_keeps_exact_http_matches_trusted_first() {
+        let raw: RawSearch = serde_json::from_str(
+            r#"{"packages": [
+                {"name": "alloy-operator", "repository": {"url": "https://a.example", "name": "a"}},
+                {"name": "alloy", "repository": {"url": "https://fork.example/charts", "name": "fork"}},
+                {"name": "alloy", "repository": {"url": "oci://ghcr.io/x", "name": "oci"}},
+                {"name": "alloy", "repository": {"url": "https://grafana.github.io/helm-charts", "name": "grafana",
+                  "display_name": "Grafana", "verified_publisher": true, "official": true}}
+            ]}"#,
+        )
+        .unwrap();
+        let found = candidates(raw, "alloy");
+        let names: Vec<_> = found.iter().map(|c| c.name.as_str()).collect();
+        assert_eq!(names, ["grafana", "fork"]);
+        assert_eq!(found[0].display_name, "Grafana");
     }
 }

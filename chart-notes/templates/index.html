@@ -3,15 +3,23 @@
 <div class="flex flex-col gap-6">
   <div class="flex flex-col gap-1">
     <h1 class="text-2xl font-semibold tracking-tight">Charts</h1>
-    <p class="text-sm text-muted-foreground">Renovate's Helm PRs link here for what changed in the app a chart packages, not just in the chart.</p>
+    <p class="text-sm text-muted-foreground">What changed in a Helm chart bump: the chart's own changes and the releases of the app it packages. Any chart on Artifact Hub works; these are the ones looked up since chart-notes started.</p>
   </div>
+
+  <form method="get" action="/" class="flex flex-wrap items-end gap-3" data-chart-lookup>
+    <div class="field w-auto">
+      <label for="lookup">Look up a chart</label>
+      <input id="lookup" name="chart" class="input" placeholder="e.g. alloy" autocomplete="off" pattern="[A-Za-z0-9._-]+" required>
+    </div>
+    <button type="submit" class="btn" data-variant="outline">Versions {% include "icons/arrow-right.svg" %}</button>
+  </form>
 
   {% if charts.is_empty() %}
   <div class="empty rounded-lg border border-dashed">
     <header>
       <figure>{% include "icons/package.svg" %}</figure>
-      <h3>No charts yet</h3>
-      <p>Add them to the Helm chart's <code>charts</code> value.</p>
+      <h3>No charts looked up yet</h3>
+      <p>Follow a link from a Renovate PR, or look one up above.</p>
     </header>
   </div>
   {% else %}
@@ -28,10 +36,10 @@
         {% for row in charts %}
         <tr>
           <td>
-            <a href="/{{ row.name }}" class="font-medium hover:underline">{{ row.name }}</a>
+            <a href="{{ row.href() }}" class="font-medium hover:underline">{{ row.name }}</a>
             {% if !row.note.is_empty() %}<span class="ms-1 inline-flex align-middle text-muted-foreground [&>svg]:size-3.5" title="{{ row.note }}">{% include "icons/info.svg" %}<span class="sr-only">{{ row.note }}</span></span>{% endif %}
           </td>
-          <td><a href="{{ row.app_url }}" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">{{ row.app }}</a></td>
+          <td>{% if row.app.is_empty() %}<span class="text-muted-foreground">unknown</span>{% else %}<a href="{{ row.app_url }}" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">{{ row.app }}</a>{% endif %}</td>
           <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="{{ row.repo }}">{{ row.repo_host }}</code></td>
         </tr>
         {% endfor %}
@@ -40,10 +48,14 @@
   </div>
   {% endif %}
 
+  {% if !overrides.is_empty() %}
+  <p class="text-sm text-muted-foreground">Overridden in the Helm chart's values: {% for o in overrides %}<code class="text-xs">{{ o }}</code>{% if !loop.last %}, {% endif %}{% endfor %}.</p>
+  {% endif %}
+
   <div class="card">
     <header>
       <h2>Renovate config</h2>
-      <p>Adds an <em>App notes</em> column to Helm chart PRs. Charts from OCI registries aren't covered.</p>
+      <p>Adds a <em>Notes</em> column to Helm chart PRs: a badge that starts looking everything up when the PR is opened, linking here. Charts from OCI registries aren't covered yet.</p>
     </header>
     <section>
       <pre class="overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>{{ renovate_config }}</code></pre>

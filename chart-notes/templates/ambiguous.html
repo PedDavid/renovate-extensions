@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col gap-6">
+  <a href="/" class="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-4">
+    {% include "icons/chevron-left.svg" %} All charts
+  </a>
+  <div class="flex flex-col gap-1">
+    <h1 class="text-2xl font-semibold tracking-tight">Which {{ name }}?</h1>
+    <p class="text-sm text-muted-foreground">Several Helm repositories have a chart named <code>{{ name }}</code>. Renovate's links say which one when they pass <code>source={{"{{{sourceUrl}}}"}}</code>; to always use one, add it under <code>overrides</code> in the Helm chart's values.</p>
+  </div>
+  <div class="table-container rounded-lg border">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th class="hidden sm:table-cell">Host</th>
+          <th class="text-end"><span class="sr-only">Pick</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in candidates %}
+        <tr>
+          <td>
+            <span class="font-medium">{{ c.display_name }}</span>
+            {% if c.official %}<span class="badge ms-1" data-variant="secondary">official</span>{% else if c.verified %}<span class="badge ms-1" data-variant="outline">verified publisher</span>{% endif %}
+          </td>
+          <td class="hidden sm:table-cell text-muted-foreground"><code class="text-xs">{{ c.host }}</code></td>
+          <td class="text-end"><a class="btn" data-variant="ghost" data-size="sm" href="{{ c.href }}">Use this {% include "icons/arrow-right.svg" %}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

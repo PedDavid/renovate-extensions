@@ -18,7 +18,7 @@ expression: html
       <p class="break-words">fetching https://charts.invalid/index.yaml: dns error: failed to lookup address information</p>
     </header>
     <footer>
-      <a class="btn" data-variant="outline" href="/offline">All offline versions</a>
+      <a class="btn" data-variant="outline" href="/">All charts</a>
     </footer>
   </div>
 </body>

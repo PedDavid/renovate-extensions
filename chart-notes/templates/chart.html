@@ -21,6 +21,8 @@
 
   {% if options.len() >= 2 %}
   <form method="get" action="/{{ chart.name }}" class="card">
+    {% if !chart.source.is_empty() %}<input type="hidden" name="source" value="https://github.com/{{ chart.source }}">{% endif %}
+    <input type="hidden" name="repo" value="{{ chart.repo }}">
     <header>
       <h2>Compare versions</h2>
       <p>Pick any two chart versions to see the app releases between them.</p>

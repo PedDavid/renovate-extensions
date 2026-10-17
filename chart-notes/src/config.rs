@@ -30,10 +30,10 @@ pub struct Config {
     #[arg(long, env = "CHART_NOTES_PUBLIC_URL")]
     pub public_url: Option<Url>,
 
-    /// Charts (YAML or JSON) on top of the bundled list, replacing entries
-    /// with the same name.
-    #[arg(long, env = "CHART_NOTES_CHARTS_FILE")]
-    pub charts_file: Option<PathBuf>,
+    /// Per-chart overrides (YAML or JSON): Helm repository, app or chart
+    /// GitHub repository, note.
+    #[arg(long, env = "CHART_NOTES_OVERRIDES_FILE")]
+    pub overrides_file: Option<PathBuf>,
 
     /// File holding a GitHub token. Unauthenticated, GitHub allows 60 API
     /// requests an hour; any token, even without scopes, allows 5000.
@@ -46,6 +46,9 @@ pub struct Config {
 
     #[arg(long, env = "CHART_NOTES_GITHUB_API_URL", default_value = crate::sources::GITHUB_API, hide = true)]
     pub github_api_url: Url,
+
+    #[arg(long, env = "CHART_NOTES_ARTIFACT_HUB_URL", default_value = crate::sources::ARTIFACT_HUB, hide = true)]
+    pub artifact_hub_url: Url,
 
     /// Serve sample data from memory, without network access.
     #[arg(long, env = "CHART_NOTES_DEMO")]

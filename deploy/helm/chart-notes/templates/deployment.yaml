@@ -20,8 +20,8 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
-        # The charts are read once at startup: roll the pod when they change.
-        checksum/charts: {{ toJson .Values.charts | sha256sum }}
+        # Overrides are read once at startup: roll the pod when they change.
+        checksum/overrides: {{ toJson .Values.overrides | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -40,9 +40,9 @@ spec:
             - name: CHART_NOTES_PUBLIC_URL
               value: {{ . | quote }}
             {{- end }}
-            {{- if .Values.charts }}
-            - name: CHART_NOTES_CHARTS_FILE
-              value: /etc/chart-notes/charts/charts.json
+            {{- if .Values.overrides }}
+            - name: CHART_NOTES_OVERRIDES_FILE
+              value: /etc/chart-notes/overrides/overrides.json
             {{- end }}
             {{- if .Values.github.existingSecret }}
             - name: CHART_NOTES_GITHUB_TOKEN_FILE
@@ -72,11 +72,11 @@ spec:
               drop: ["ALL"]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if or .Values.charts .Values.github.existingSecret }}
+          {{- if or .Values.overrides .Values.github.existingSecret }}
           volumeMounts:
-            {{- if .Values.charts }}
-            - name: charts
-              mountPath: /etc/chart-notes/charts
+            {{- if .Values.overrides }}
+            - name: overrides
+              mountPath: /etc/chart-notes/overrides
               readOnly: true
             {{- end }}
             {{- if .Values.github.existingSecret }}
@@ -85,12 +85,12 @@ spec:
               readOnly: true
             {{- end }}
           {{- end }}
-      {{- if or .Values.charts .Values.github.existingSecret }}
+      {{- if or .Values.overrides .Values.github.existingSecret }}
       volumes:
-        {{- if .Values.charts }}
-        - name: charts
+        {{- if .Values.overrides }}
+        - name: overrides
           configMap:
-            name: {{ include "chart-notes.fullname" . }}-charts
+            name: {{ include "chart-notes.fullname" . }}-overrides
         {{- end }}
         {{- if .Values.github.existingSecret }}
         - name: github

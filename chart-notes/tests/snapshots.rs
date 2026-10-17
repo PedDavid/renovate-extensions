@@ -93,3 +93,9 @@ async fn upstream_error() {
     let html = render("/offline", &[], StatusCode::BAD_GATEWAY).await;
     assert_html("upstream_error", html);
 }
+
+#[tokio::test]
+async fn several_repositories() {
+    let html = render("/nginx?from=1.0.0&to=1.1.0", &[], StatusCode::OK).await;
+    assert_html("ambiguous_nginx", html);
+}

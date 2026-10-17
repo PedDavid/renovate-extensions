@@ -11,15 +11,23 @@ use tower::ServiceExt;
 
 use chart_notes::demo;
 use chart_notes::metrics::Metrics;
+use chart_notes::resolve::Resolver;
+use chart_notes::sources::Sources;
 use chart_notes::web::{AppState, router};
 
 /// The demo app, rendered as of a fixed time.
 pub fn demo_state() -> (AppState, Arc<Metrics>) {
-    let charts = demo::charts();
-    let metrics = Arc::new(Metrics::new(charts.len()));
+    let overrides = demo::overrides();
+    let metrics = Arc::new(Metrics::new(overrides.len()));
+    let sources: Arc<dyn Sources> = Arc::new(demo::DemoSources);
+    let resolver = Arc::new(Resolver::new(
+        overrides,
+        sources.clone(),
+        std::time::Duration::from_secs(3600),
+    ));
     let state = AppState::new(
-        charts,
-        Arc::new(demo::DemoSources),
+        resolver,
+        sources,
         metrics.clone(),
         Some("https://chart-notes.example.com".parse().unwrap()),
         true,

@@ -2,8 +2,8 @@ apiVersion: v2
 name: chart-notes
 description: The app release notes behind a Helm chart bump, for Renovate PRs
 type: application
-version: 0.3.0
-appVersion: "0.3.0"
+version: 0.4.0
+appVersion: "0.4.0"
 home: https://github.com/PedDavid/renovate-extensions
 sources:
   - https://github.com/PedDavid/renovate-extensions

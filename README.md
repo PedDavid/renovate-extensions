@@ -15,11 +15,16 @@ which rarely say what changed in the app the chart packages. Renovate also
 drops the chart's `appVersion`, so no PR template can link to the app's notes
 directly.
 
-`GET /<chart>?from=<version>&to=<version>` reads `appVersion` for both chart
-versions from the chart repository's `index.yaml`. It then shows the release
-notes of every stable app release in between, newest first, with a link to
-the full diff. When the app version didn't change, it says so; a downgrade
-lists what it rolls back.
+`GET /<chart>?from=<version>&to=<version>&source=<sourceUrl>` shows what
+changed between two chart versions:
+
+- **Chart changes**, from the chart versions' `artifacthub.io/changes`
+  annotations in the Helm repository's `index.yaml`. When the chart has none,
+  they come from the chart repository's GitHub releases (chart-releaser tags
+  them `<chart>-<version>`).
+- **App release notes**: the stable releases of the app between the two
+  `appVersion`s, newest first, as GitHub renders them, with a link to the full
+  diff. A downgrade lists what it rolls back.
 
 ![Notes for an alloy bump](docs/screenshots/notes.png)
 
@@ -27,12 +32,13 @@ lists what it rolls back.
 |---|---|
 | ![Versions](docs/screenshots/versions-dark.png) | ![Charts](docs/screenshots/charts.png) |
 
-- **`/`** lists the known charts and the Renovate config to paste, with this
-  instance's URL filled in.
+- **`/`** lists the charts looked up so far, a form to look one up, and the
+  Renovate config to paste, with this instance's URL filled in.
 - **`/<chart>`** lists the chart's versions with their app versions, each
   linked to the notes for the bump from the one before, and a form to compare
   any two.
-- **⌘K** searches the charts.
+- **`/<chart>/badge.svg?…`** is the badge for Renovate's PR table (below).
+- **⌘K** searches the charts looked up so far, or looks a new one up.
 
 ### Renovate config
 
@@ -41,9 +47,9 @@ lists what it rolls back.
   {
     "matchDatasources": ["helm"],
     // Renovate's default columns plus this one.
-    "prBodyColumns": ["Package", "Type", "Update", "Change", "Pending", "App notes"],
+    "prBodyColumns": ["Package", "Type", "Update", "Change", "Pending", "Notes"],
     "prBodyDefinitions": {
-      "App notes": "[app notes](https://chart-notes.example.com/{{{packageName}}}?from={{{currentVersion}}}&to={{{newVersion}}})"
+      "Notes": "[![release notes](https://chart-notes.example.com/{{{packageName}}}/badge.svg?from={{{currentVersion}}}&to={{{newVersion}}}&source={{{sourceUrl}}})](https://chart-notes.example.com/{{{packageName}}}?from={{{currentVersion}}}&to={{{newVersion}}}&source={{{sourceUrl}}})"
     }
   }
 ]
@@ -52,27 +58,60 @@ lists what it rolls back.
 Only charts from Helm repositories (Renovate's `helm` datasource) are
 covered, not OCI-hosted ones.
 
-The old `/<chart>/<from>/<to>` form is gone: links to it in open PRs return
-404 until Renovate next updates those PRs.
+### The badge
 
-### Charts
+The column is a badge linking to the notes page. Loading the badge starts
+every lookup the page needs (the chart's repository, its changes, the app's
+releases and their notes), so the page is ready by the time someone clicks.
+It answers within a second and a half either way: with what changed
+(`app v1.10.2 → v1.11.2 · 4 releases`) once that's known, else
+"looking up", and a later view shows the result.
 
-A chart name alone doesn't say which repository it comes from (`loki` is in
-grafana-community's, `alloy` in grafana's), so each chart is listed in
-[`chart-notes/charts.yaml`](chart-notes/charts.yaml) with its Helm repository
-and the GitHub repository of its app. The Helm chart's `charts` value adds to
-that list or replaces entries without a new image:
+Who fetches the badge depends on the forge:
+
+| Forge | Fetched by | chart-notes on the LAN only |
+|---|---|---|
+| GitHub | GitHub's image proxy, from GitHub's servers | The badge doesn't show; its alt text still links to the page, which looks everything up when opened |
+| Gitea, Forgejo | The viewer's browser (unless the instance's `[camo]` proxy is on) | Works |
+| GitLab self-managed | The viewer's browser (unless an admin set up the asset proxy) | Works |
+
+To have the badge on GitHub while keeping the pages on the LAN, expose only
+`/<chart>/badge.svg` publicly (e.g. a second Ingress with a regex path, where
+the controller supports one). The badge only shows versions and counts.
+
+### Finding the chart
+
+There's no list of charts to maintain. Renovate can't pass the Helm
+repository's URL, but it passes `{{sourceUrl}}`: for Helm charts, the GitHub
+repository the chart is released from (e.g. `grafana/helm-charts`). From
+that:
+
+1. **Helm repository:** the source repository's GitHub Pages site (where
+   chart-releaser publishes), else the repositories Artifact Hub lists with
+   a chart of that name: the one whose index gives the same source URL. With
+   no `source` (a hand-typed URL), Artifact Hub's only match is used, or the
+   only official or verified one; when several remain, the page asks which.
+2. **App:** the first GitHub repository among the chart's `sources` and
+   `home` that isn't the chart's own repository.
+3. **Overrides** in the Helm chart's values cover what that gets wrong, per
+   chart, with every field optional:
 
 ```yaml
-charts:
-  my-chart:
-    repo: https://charts.example.com   # serves index.yaml
-    app: owner/repo                    # the app's GitHub releases
-    note: Optional caveat shown on the page.
+overrides:
+  kube-prometheus-stack:
+    app: prometheus-operator/prometheus-operator   # its appVersion is the operator's
+    note: Prometheus and Alertmanager can change without the appVersion changing.
+  my-internal-chart:
+    repo: https://charts.internal.example          # not on Artifact Hub
+    app: me/my-app
+    source: me/my-charts                           # GitHub releases with the chart's notes
 ```
 
-Entries are checked at startup: an unknown field, a non-http(s) `repo` or an
-`app` that isn't `owner/repo` stops the pod with the reason in its log.
+Only URLs chart-notes derives are fetched: a `<owner>.github.io` site built
+from a GitHub `owner/repo`, the repositories Artifact Hub lists, and
+overrides. A `source` or `repo` in a request URL is never fetched as given.
+Overrides are checked at startup: an unknown field, a non-http(s) `repo` or
+an `app` that isn't `owner/repo` stops the pod with the reason in its log.
 
 ### Upstreams
 
@@ -81,13 +120,14 @@ Entries are checked at startup: an unknown field, a non-http(s) `repo` or an
   removes anything that isn't safe to embed (scripts, styles, event
   handlers, non-http links), and the page only loads images from GitHub's
   hosts. Each release's notes take one API request. A page loads the 20
-  newest and links to any older ones.
-- **Caching.** Each Helm index, each app's release list and each release's
-  notes are cached in memory for `cacheTtl` (10 minutes). Notes nobody has
-  looked at for a week are dropped. Concurrent requests for the same one share a
-  single fetch. Refreshes are conditional (ETag), so an unchanged index isn't
-  downloaded again and an unchanged release list doesn't count against
-  GitHub's rate limit.
+  newest app releases' notes and 10 chart releases', and links to the rest.
+- **Caching.** Each chart's index entries, each app's release list and each
+  release's notes are cached in memory for `cacheTtl` (10 minutes); where a
+  chart comes from, for 36 times that. Per-chart and per-release entries
+  nobody has asked for in a week are dropped. Concurrent requests for the same one share a single fetch.
+  Refreshes are conditional (ETag), so an unchanged index isn't downloaded
+  again and an unchanged release list doesn't count against GitHub's rate
+  limit.
 - **Failures.** When a refresh fails, the last good copy is served with a
   note saying how old it is. When GitHub can't be reached at all (or the rate
   limit is used up), the page still shows both app versions and the diff
@@ -106,10 +146,11 @@ Service (`serviceMonitor.enabled` scrapes it):
 | Metric | |
 |---|---|
 | `chart_notes_pages_total{result}` | Notes pages: `ok`, `unknown_chart`, `unknown_version`, `upstream_error` (a 502, or a page with older or no releases) |
-| `chart_notes_upstream_requests_total{upstream,result}` | `helm` and `github` requests: `ok`, `not_modified`, `rate_limited`, `error` |
+| `chart_notes_badges_total{result}` | Badges: `ready`, `pending` (still looking up), `error` |
+| `chart_notes_upstream_requests_total{upstream,result}` | `helm`, `github` and `artifacthub` requests: `ok`, `not_modified`, `rate_limited`, `error` |
 | `chart_notes_github_rate_limit_remaining` | GitHub requests left in the window (-1 before the first request) |
 | `chart_notes_github_rate_limit_reset_timestamp_seconds` | When the window resets |
-| `chart_notes_charts` | Charts known |
+| `chart_notes_overrides` | Charts with an override |
 | `chart_notes_build_info{version}` | The running version |
 
 ### Deploying
@@ -123,8 +164,8 @@ helm install chart-notes oci://ghcr.io/peddavid/charts/chart-notes \
 
 Options are documented in [`values.yaml`](deploy/helm/chart-notes/values.yaml).
 The pod runs as non-root with a read-only root filesystem, no capabilities
-and no service account token. The pages are public, since Renovate PRs link
-to them, and only show public data.
+and no service account token. The pages only show public data; see
+[The badge](#the-badge) for what needs to be reachable from where.
 
 Every push to `main` publishes `ghcr.io/peddavid/renovate-extensions/chart-notes`
 tagged `sha-<commit>` and `main`, plus the chart's `appVersion` the first time

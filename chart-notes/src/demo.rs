@@ -1,83 +1,192 @@
 //! Sample charts, indexes and releases for `--demo` and the tests: no network.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use jiff::Timestamp;
 
+use url::Url;
+
 use crate::cache::Cached;
-use crate::charts::{self, Chart, Charts};
+use crate::overrides::{self, Overrides};
 use crate::sources::{
-    ChartVersion, HelmIndex, Release, ReleaseNotes, Releases, Sources, UpstreamError,
+    Candidate, ChartIndex, ChartVersion, Release, ReleaseNotes, Releases, Sources, UpstreamError,
 };
 
-pub fn charts() -> Charts {
-    charts::parse(
+/// The demo's overrides: an app the lookup can't guess, with a note, and a
+/// repository that can't be reached.
+pub fn overrides() -> Overrides {
+    overrides::parse(
         r#"
-alloy:
-  repo: https://grafana.github.io/helm-charts
-  app: grafana/alloy
 kube-prometheus-stack:
-  repo: https://prometheus-community.github.io/helm-charts
   app: prometheus-operator/prometheus-operator
   note: >-
     This chart's appVersion is prometheus-operator's. Prometheus,
     Alertmanager and the other bundled images can change without it.
-traefik:
-  repo: https://traefik.github.io/charts
-  app: traefik/traefik
 offline:
   repo: https://charts.invalid
   app: example/offline
 "#,
     )
-    .expect("demo charts are valid")
+    .expect("demo overrides are valid")
 }
 
 fn ts(s: &str) -> Timestamp {
     s.parse().expect("demo timestamps are valid")
 }
 
-fn versions(list: &[(&str, &str, &str)]) -> Vec<ChartVersion> {
+/// Where each demo chart is released from, and its app.
+struct Meta {
+    repo: &'static str,
+    source: &'static str,
+    app: &'static str,
+}
+
+fn meta(chart: &str) -> Option<Meta> {
+    Some(match chart {
+        "alloy" => Meta {
+            repo: "https://grafana.github.io/helm-charts",
+            source: "grafana/helm-charts",
+            app: "grafana/alloy",
+        },
+        "kube-prometheus-stack" => Meta {
+            repo: "https://prometheus-community.github.io/helm-charts",
+            source: "prometheus-community/helm-charts",
+            app: "prometheus/prometheus",
+        },
+        "traefik" => Meta {
+            repo: "https://traefik.github.io/charts",
+            source: "traefik/traefik-helm-chart",
+            app: "traefik/traefik",
+        },
+        _ => return None,
+    })
+}
+
+const ALLOY_1_4_0: &str = "- kind: added
+  description: Add `alloy.extraPorts` to expose extra container ports.
+  links:
+    - name: \"PR #3911\"
+      url: https://github.com/grafana/helm-charts/pull/3911
+- kind: changed
+  description: Bump Alloy to v1.11.2.
+";
+
+const ALLOY_1_3_1: &str = "- kind: fixed
+  description: Fix the PodDisruptionBudget template when `replicas` is 1.
+  links:
+    - name: \"PR #3890\"
+      url: https://github.com/grafana/helm-charts/pull/3890
+- kind: changed
+  description: Bump Alloy to v1.11.0.
+";
+
+fn versions(chart: &str, list: &[(&str, &str, &str, Option<&str>)]) -> Vec<ChartVersion> {
+    let m = meta(chart).expect("demo chart");
     list.iter()
-        .map(|(version, app, created)| ChartVersion {
+        .map(|(version, app, created, changes)| ChartVersion {
             version: (*version).into(),
             app_version: Some((*app).into()),
             created: Some(ts(created)),
+            home: None,
+            sources: vec![
+                format!("https://github.com/{}", m.app),
+                format!("https://github.com/{}", m.source),
+            ],
+            url: Some(format!(
+                "https://github.com/{}/releases/download/{chart}-{version}/{chart}-{version}.tgz",
+                m.source
+            )),
+            changes: changes.map(str::to_string),
         })
         .collect()
 }
 
-/// One index with every demo chart, whichever repository is asked.
-fn index() -> HelmIndex {
-    HelmIndex::new(HashMap::from([
-        (
-            "alloy".to_string(),
-            versions(&[
-                ("1.4.0", "v1.11.2", "2026-10-08T17:41:54Z"),
-                ("1.3.1", "v1.11.0", "2026-09-30T09:12:00Z"),
-                ("1.3.0", "v1.10.2", "2026-09-10T14:03:00Z"),
-                ("1.2.1", "v1.10.1", "2026-08-21T08:30:00Z"),
-                ("1.2.0", "v1.10.1", "2026-08-14T11:45:00Z"),
-            ]),
+fn index(chart: &str) -> Vec<ChartVersion> {
+    match chart {
+        "alloy" => versions(
+            chart,
+            &[
+                (
+                    "1.4.0",
+                    "v1.11.2",
+                    "2026-10-08T17:41:54Z",
+                    Some(ALLOY_1_4_0),
+                ),
+                (
+                    "1.3.1",
+                    "v1.11.0",
+                    "2026-09-30T09:12:00Z",
+                    Some(ALLOY_1_3_1),
+                ),
+                ("1.3.0", "v1.10.2", "2026-09-10T14:03:00Z", None),
+                ("1.2.1", "v1.10.1", "2026-08-21T08:30:00Z", None),
+                ("1.2.0", "v1.10.1", "2026-08-14T11:45:00Z", None),
+            ],
         ),
-        (
-            "kube-prometheus-stack".to_string(),
-            versions(&[
-                ("79.1.0", "v0.86.1", "2026-10-12T10:00:00Z"),
-                ("79.0.2", "v0.86.1", "2026-10-05T10:00:00Z"),
-                ("78.5.0", "v0.86.0", "2026-09-28T10:00:00Z"),
-            ]),
+        "kube-prometheus-stack" => versions(
+            chart,
+            &[
+                ("79.1.0", "v0.86.1", "2026-10-12T10:00:00Z", None),
+                ("79.0.2", "v0.86.1", "2026-10-05T10:00:00Z", None),
+                ("78.5.0", "v0.86.0", "2026-09-28T10:00:00Z", None),
+            ],
         ),
-        (
-            "traefik".to_string(),
-            versions(&[
-                ("37.2.0", "v3.5.3", "2026-10-01T10:00:00Z"),
-                ("37.1.2", "v3.5.2", "2026-09-17T10:00:00Z"),
-            ]),
+        // No `artifacthub.io/changes`: the chart's notes are its GitHub
+        // releases.
+        "traefik" => versions(
+            chart,
+            &[
+                ("37.2.0", "v3.5.3", "2026-10-01T10:00:00Z", None),
+                ("37.1.2", "v3.5.2", "2026-09-17T10:00:00Z", None),
+            ],
         ),
-    ]))
+        _ => Vec::new(),
+    }
+}
+
+fn candidate(repo: &str, name: &str, display: &str, official: bool) -> Candidate {
+    Candidate {
+        repo: Url::parse(repo).expect("demo URLs are valid"),
+        name: name.into(),
+        display_name: display.into(),
+        official,
+        verified: official,
+    }
+}
+
+/// What Artifact Hub lists. "nginx" is in two repositories, neither
+/// official: the page asks which one.
+fn search(chart: &str) -> Vec<Candidate> {
+    match chart {
+        "nginx" => vec![
+            candidate(
+                "https://charts.example.org/stable",
+                "example-stable",
+                "Example stable",
+                false,
+            ),
+            candidate(
+                "https://charts.example.net",
+                "example-net",
+                "Example.net charts",
+                false,
+            ),
+        ],
+        "alloy" => vec![
+            candidate(meta(chart).unwrap().repo, "grafana", "Grafana", true),
+            candidate(
+                "https://charts.example.org/forks",
+                "forks",
+                "Some forks",
+                false,
+            ),
+        ],
+        _ => match meta(chart) {
+            Some(m) => vec![candidate(m.repo, chart, chart, true)],
+            None => Vec::new(),
+        },
+    }
 }
 
 fn release(app: &str, tag: &str, published: &str, prerelease: bool) -> Release {
@@ -146,6 +255,13 @@ fn notes_html(app: &str, tag: &str) -> Option<&'static str> {
 <pre><code>helm upgrade alloy grafana/alloy --version 1.4.0
 </code></pre>"#
         }
+        ("traefik/traefik-helm-chart", "traefik-37.2.0") => {
+            r#"<h2>What's changed</h2>
+<ul>
+<li>feat(deps): update traefik to v3.5.3 by <a href="https://github.com/renovate-bot">@renovate-bot</a></li>
+<li>fix(gateway): honour <code>gateway.listeners.*.hostname</code> by <a href="https://github.com/mloiseleur">@mloiseleur</a></li>
+</ul>"#
+        }
         ("prometheus-operator/prometheus-operator", "v0.86.1") => {
             r#"<ul>
 <li>[BUGFIX] Fix the <code>ScrapeConfig</code> reconciliation when the namespace selector is empty. <a href="https://github.com/prometheus-operator/prometheus-operator/pull/7900">#7900</a></li>
@@ -165,16 +281,30 @@ pub struct DemoSources;
 
 #[async_trait]
 impl Sources for DemoSources {
-    async fn index(&self, chart: &Chart) -> Result<Cached<HelmIndex>, UpstreamError> {
+    async fn index(&self, repo: &Url, chart: &str) -> Result<Cached<ChartIndex>, UpstreamError> {
         // The "offline" chart's repository is unreachable.
-        if chart.repo.host_str() == Some("charts.invalid") {
+        if repo.host_str() == Some("charts.invalid") {
             return Err(UpstreamError::Request {
-                url: chart.index_url(),
+                url: crate::sources::index_url(repo),
                 message: "dns error: failed to lookup address information".into(),
             });
         }
+        // Each demo chart is only in its own repository.
+        let here = meta(chart).is_some_and(|m| repo.as_str().trim_end_matches('/') == m.repo);
         Ok(Cached {
-            value: Arc::new(index()),
+            value: Arc::new(ChartIndex::new(if here {
+                index(chart)
+            } else {
+                Vec::new()
+            })),
+            fetched_at: fetched_at(),
+            stale: None,
+        })
+    }
+
+    async fn search(&self, chart: &str) -> Result<Cached<Vec<Candidate>>, UpstreamError> {
+        Ok(Cached {
+            value: Arc::new(search(chart)),
             fetched_at: fetched_at(),
             stale: None,
         })

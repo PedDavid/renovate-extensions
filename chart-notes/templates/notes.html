@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="flex flex-col gap-6">
-  <a href="/{{ chart.name }}" class="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-4">
+  <a href="{{ chart.href() }}" class="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-4">
     {% include "icons/chevron-left.svg" %} All {{ chart.name }} versions
   </a>
 
@@ -14,7 +14,7 @@
         <span class="tabular-nums">{{ to }}</span>
       </h1>
       <div class="flex flex-wrap items-center gap-2 text-sm">
-        <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="{{ chart.app_url }}" target="_blank" rel="noopener noreferrer">{{ chart.app }}</a>
+        {% if chart.app.is_empty() %}<span class="text-muted-foreground">App</span>{% else %}<a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="{{ chart.app_url }}" target="_blank" rel="noopener noreferrer">{{ chart.app }}</a>{% endif %}
         <code title="appVersion of {{ chart.name }} {{ from }}{% if !from_date.is_empty() %}, released {{ from_date }}{% endif %}">{{ old_app }}</code>
         <span class="text-muted-foreground [&>svg]:size-3.5" aria-label="to">{% include "icons/arrow-right.svg" %}</span>
         <code title="appVersion of {{ chart.name }} {{ to }}{% if !to_date.is_empty() %}, released {{ to_date }}{% endif %}">{{ new_app }}</code>
@@ -26,9 +26,9 @@
         <span class="text-muted-foreground">Chart from <code class="text-xs">{{ chart.repo_host }}</code></span>
       </div>
     </div>
-    {% if direction != "same" %}
+    {% if !compare_url.is_empty() %}
     <a class="btn" data-variant="outline" href="{{ compare_url }}" target="_blank" rel="noopener noreferrer">
-      {% include "icons/git-compare.svg" %} Full diff
+      {% include "icons/git-compare.svg" %} Full app diff
     </a>
     {% endif %}
   </div>
@@ -43,28 +43,80 @@
   </div>
   {% endfor %}
 
+  {% if !notes_error.is_empty() %}
+  <div class="alert" data-variant="destructive" role="alert">
+    {% include "icons/triangle-alert.svg" %}
+    <h2>Some notes couldn't be loaded</h2>
+    <section><p>{{ notes_error }}</p></section>
+  </div>
+  {% endif %}
+
+  <div class="flex flex-col gap-3">
+    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
+      Chart changes
+      <span class="text-muted-foreground font-normal">· {{ chart_releases.len() }} {% if chart_releases.len() == 1 %}chart release{% else %}chart releases{% endif %}</span>
+      {% if !chart.source.is_empty() %}<span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">{{ chart.source }}</code></span>{% endif %}
+    </h2>
+    {% for c in chart_releases %}
+    <details class="release"{% if loop.index <= 5 %} open{% endif %}>
+      <summary>
+        <span class="release-chevron">{% include "icons/chevron-right.svg" %}</span>
+        <span class="font-semibold">{{ chart.name }}-{{ c.version }}</span>
+        {% if !c.app_version.is_empty() %}<span class="text-sm text-muted-foreground">ships app <code class="text-xs">{{ c.app_version }}</code></span>{% endif %}
+        {% if !c.created_date.is_empty() %}<span class="text-sm text-muted-foreground" title="{{ c.created_date }}">{{ c.created_rel }}</span>{% endif %}
+        {% if let Some(url) = c.url %}
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="{{ url }}" target="_blank" rel="noopener noreferrer">GitHub {% include "icons/external-link.svg" %}</a>
+        {% endif %}
+      </summary>
+      <div class="release-body">
+        {% if c.kind == "changes" %}
+        <ul class="flex flex-col gap-1.5 text-sm">
+          {% for ch in c.changes %}
+          <li class="flex flex-wrap items-baseline gap-2">
+            {% if !ch.kind.is_empty() %}<span class="badge change-kind" data-kind="{{ ch.kind }}">{{ ch.kind }}</span>{% endif %}
+            <span>{{ ch.description_html|safe }}</span>
+            {% for (name, url) in ch.links %}<a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="{{ url }}" target="_blank" rel="noopener noreferrer nofollow">{{ name }}</a>{% endfor %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else if c.kind == "release" %}
+        <div class="prose prose-sm dark:prose-invert max-w-none">{{ c.html|safe }}</div>
+        {% else %}
+        <p class="text-sm text-muted-foreground">No changes listed for this chart version.</p>
+        {% endif %}
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+
   {% if direction == "same" %}
   <div class="empty rounded-lg border border-dashed">
     <header>
       <figure>{% include "icons/package.svg" %}</figure>
-      <h3>Same {{ chart.app }} version</h3>
-      <p>Only the chart changed. Its own release notes are in the Renovate PR.</p>
+      <h3>Same app version</h3>
+      <p>Only the chart changed: its changes are above.</p>
     </header>
+  </div>
+  {% else if chart.app.is_empty() %}
+  <div class="alert" role="note">
+    {% include "icons/info.svg" %}
+    <h2>Which repository has the app's releases?</h2>
+    <section><p>The chart's metadata doesn't say. Set <code>overrides.{{ chart.name }}.app</code> in the Helm chart's values to a GitHub <code>owner/repo</code>.</p></section>
   </div>
   {% else if !releases_error.is_empty() %}
   <div class="alert" data-variant="destructive" role="alert">
     {% include "icons/triangle-alert.svg" %}
-    <h2>Couldn't list the releases</h2>
+    <h2>Couldn't list the app's releases</h2>
     <section>
       <p>{{ releases_error }}</p>
-      <p>The <a class="underline underline-offset-4" href="{{ compare_url }}" target="_blank" rel="noopener noreferrer">full diff</a> and <a class="underline underline-offset-4" href="{{ releases_url }}" target="_blank" rel="noopener noreferrer">all releases</a> are on GitHub.</p>
+      <p>{% if !compare_url.is_empty() %}The <a class="underline underline-offset-4" href="{{ compare_url }}" target="_blank" rel="noopener noreferrer">full diff</a> and <a{% else %}<a{% endif %} class="underline underline-offset-4" href="{{ releases_url }}" target="_blank" rel="noopener noreferrer">all releases</a> are on GitHub.</p>
     </section>
   </div>
   {% else if releases.is_empty() %}
   <div class="empty rounded-lg border border-dashed">
     <header>
       <figure>{% include "icons/tag.svg" %}</figure>
-      <h3>No matching releases</h3>
+      <h3>No matching app releases</h3>
       <p>None of {{ chart.app }}'s recent stable releases fall between <code>{{ old_app }}</code> and <code>{{ new_app }}</code>.</p>
     </header>
     <footer>
@@ -73,17 +125,11 @@
   </div>
   {% else %}
   <div class="flex flex-col gap-3">
-    <h2 class="text-lg font-semibold">
-      {% if direction == "downgrade" %}Rolled back{% else %}Release notes{% endif %}
+    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
+      {% if direction == "downgrade" %}App: rolled back{% else %}App release notes{% endif %}
       <span class="text-muted-foreground font-normal">· {{ releases.len() }} {% if releases.len() == 1 %}release{% else %}releases{% endif %}</span>
+      <span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">{{ chart.app }}</code></span>
     </h2>
-    {% if !notes_error.is_empty() %}
-    <div class="alert" data-variant="destructive" role="alert">
-      {% include "icons/triangle-alert.svg" %}
-      <h2>Some notes couldn't be loaded</h2>
-      <section><p>{{ notes_error }}</p></section>
-    </div>
-    {% endif %}
     {% for r in releases %}
     <details class="release"{% if loop.index <= 5 %} open{% endif %}>
       <summary>

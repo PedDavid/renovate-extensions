@@ -143,34 +143,15 @@ expression: html
 <div class="flex flex-col gap-6">
   <div class="flex flex-col gap-1">
     <h1 class="text-2xl font-semibold tracking-tight">Charts</h1>
-    <p class="text-sm text-muted-foreground">Renovate's Helm PRs link here for what changed in the app a chart packages, not just in the chart.</p>
+    <p class="text-sm text-muted-foreground">What changed in a Helm chart bump: the chart's own changes and the releases of the app it packages. Any chart on Artifact Hub works; these are the ones looked up since chart-notes started.</p>
   </div>
 
-  
-  <div class="table-container rounded-lg border">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Chart</th>
-          <th>App</th>
-          <th class="hidden md:table-cell">Helm repository</th>
-        </tr>
-      </thead>
-      <tbody>
-        
-        <tr>
-          <td>
-            <a href="/alloy" class="font-medium hover:underline">alloy</a>
-            
-          </td>
-          <td><a href="https://github.com/grafana/alloy" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">grafana/alloy</a></td>
-          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://grafana.github.io/helm-charts">grafana.github.io</code></td>
-        </tr>
-        
-        <tr>
-          <td>
-            <a href="/kube-prometheus-stack" class="font-medium hover:underline">kube-prometheus-stack</a>
-            <span class="ms-1 inline-flex align-middle text-muted-foreground [&>svg]:size-3.5" title="This chart&#39;s appVersion is prometheus-operator&#39;s. Prometheus, Alertmanager and the other bundled images can change without it."><svg
+  <form method="get" action="/" class="flex flex-wrap items-end gap-3" data-chart-lookup>
+    <div class="field w-auto">
+      <label for="lookup">Look up a chart</label>
+      <input id="lookup" name="chart" class="input" placeholder="e.g. alloy" autocomplete="off" pattern="[A-Za-z0-9._-]+" required>
+    </div>
+    <button type="submit" class="btn" data-variant="outline">Versions <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -182,51 +163,54 @@ expression: html
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  <circle cx="12" cy="12" r="10" />
-  <path d="M12 16v-4" />
-  <path d="M12 8h.01" />
-</svg><span class="sr-only">This chart&#39;s appVersion is prometheus-operator&#39;s. Prometheus, Alertmanager and the other bundled images can change without it.</span></span>
-          </td>
-          <td><a href="https://github.com/prometheus-operator/prometheus-operator" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">prometheus-operator/prometheus-operator</a></td>
-          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://prometheus-community.github.io/helm-charts">prometheus-community.github.io</code></td>
-        </tr>
-        
-        <tr>
-          <td>
-            <a href="/offline" class="font-medium hover:underline">offline</a>
-            
-          </td>
-          <td><a href="https://github.com/example/offline" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">example/offline</a></td>
-          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://charts.invalid/">charts.invalid</code></td>
-        </tr>
-        
-        <tr>
-          <td>
-            <a href="/traefik" class="font-medium hover:underline">traefik</a>
-            
-          </td>
-          <td><a href="https://github.com/traefik/traefik" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">traefik/traefik</a></td>
-          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://traefik.github.io/charts">traefik.github.io</code></td>
-        </tr>
-        
-      </tbody>
-    </table>
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg></button>
+  </form>
+
+  
+  <div class="empty rounded-lg border border-dashed">
+    <header>
+      <figure><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+  <path d="M12 22V12" />
+  <polyline points="3.29 7 12 12 20.71 7" />
+  <path d="m7.5 4.27 9 5.15" />
+</svg></figure>
+      <h3>No charts looked up yet</h3>
+      <p>Follow a link from a Renovate PR, or look one up above.</p>
+    </header>
   </div>
+  
+
+  
+  <p class="text-sm text-muted-foreground">Overridden in the Helm chart's values: <code class="text-xs">kube-prometheus-stack</code>, <code class="text-xs">offline</code>.</p>
   
 
   <div class="card">
     <header>
       <h2>Renovate config</h2>
-      <p>Adds an <em>App notes</em> column to Helm chart PRs. Charts from OCI registries aren't covered.</p>
+      <p>Adds a <em>Notes</em> column to Helm chart PRs: a badge that starts looking everything up when the PR is opened, linking here. Charts from OCI registries aren't covered yet.</p>
     </header>
     <section>
       <pre class="overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>&#34;packageRules&#34;: [
   {
     &#34;matchDatasources&#34;: [&#34;helm&#34;],
     // Renovate&#39;s default columns plus this one.
-    &#34;prBodyColumns&#34;: [&#34;Package&#34;, &#34;Type&#34;, &#34;Update&#34;, &#34;Change&#34;, &#34;Pending&#34;, &#34;App notes&#34;],
+    &#34;prBodyColumns&#34;: [&#34;Package&#34;, &#34;Type&#34;, &#34;Update&#34;, &#34;Change&#34;, &#34;Pending&#34;, &#34;Notes&#34;],
     &#34;prBodyDefinitions&#34;: {
-      &#34;App notes&#34;: &#34;[app notes](https://chart-notes.example.com/{{{packageName}}}?from={{{currentVersion}}}&#38;to={{{newVersion}}})&#34;
+      &#34;Notes&#34;: &#34;[![release notes](https://chart-notes.example.com/{{{packageName}}}/badge.svg?from={{{currentVersion}}}&#38;to={{{newVersion}}}&#38;source={{{sourceUrl}}})](https://chart-notes.example.com/{{{packageName}}}?from={{{currentVersion}}}&#38;to={{{newVersion}}}&#38;source={{{sourceUrl}}})&#34;
     }
   }
 ]</code></pre>

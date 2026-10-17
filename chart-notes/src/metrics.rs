@@ -26,26 +26,35 @@ struct BuildLabels {
 
 /// Every `result` a notes page can end in.
 pub const PAGE_RESULTS: [&str; 4] = ["ok", "unknown_chart", "unknown_version", "upstream_error"];
+/// Every `result` a badge can be served with.
+pub const BADGE_RESULTS: [&str; 3] = ["ready", "pending", "error"];
 /// Every `upstream` and `result` of an upstream request.
-pub const UPSTREAMS: [&str; 2] = ["helm", "github"];
+pub const UPSTREAMS: [&str; 3] = ["helm", "github", "artifacthub"];
 pub const UPSTREAM_RESULTS: [&str; 4] = ["ok", "not_modified", "rate_limited", "error"];
 
 pub struct Metrics {
     registry: Registry,
     pages: Family<ResultLabels, Counter>,
+    badges: Family<ResultLabels, Counter>,
     upstream: Family<UpstreamLabels, Counter>,
     pub github_rate_limit_remaining: Gauge,
     pub github_rate_limit_reset: Gauge,
 }
 
 impl Metrics {
-    pub fn new(charts: usize) -> Self {
+    pub fn new(overrides: usize) -> Self {
         let mut registry = Registry::default();
         // Each series starts at 0: `increase()` ignores a counter's first
         // sample, so one that first appears at 1 would hide an event.
         let pages = Family::<ResultLabels, Counter>::default();
         for result in PAGE_RESULTS {
             let _ = pages.get_or_create(&ResultLabels {
+                result: result.into(),
+            });
+        }
+        let badges = Family::<ResultLabels, Counter>::default();
+        for result in BADGE_RESULTS {
+            let _ = badges.get_or_create(&ResultLabels {
                 result: result.into(),
             });
         }
@@ -64,8 +73,13 @@ impl Metrics {
             pages.clone(),
         );
         registry.register(
+            "chart_notes_badges",
+            "Badges served, by result (ready, pending: still being looked up, error)",
+            badges.clone(),
+        );
+        registry.register(
             "chart_notes_upstream_requests",
-            "Requests to Helm repositories and GitHub, by upstream and result",
+            "Requests to Helm repositories, GitHub and Artifact Hub, by upstream and result",
             upstream.clone(),
         );
         let remaining = Gauge::default();
@@ -82,8 +96,12 @@ impl Metrics {
             reset.clone(),
         );
         let configured = Gauge::<i64>::default();
-        configured.set(charts as i64);
-        registry.register("chart_notes_charts", "Charts chart-notes knows", configured);
+        configured.set(overrides as i64);
+        registry.register(
+            "chart_notes_overrides",
+            "Charts with an override",
+            configured,
+        );
         registry.register(
             "chart_notes_build",
             "The running version",
@@ -94,6 +112,7 @@ impl Metrics {
         Metrics {
             registry,
             pages,
+            badges,
             upstream,
             github_rate_limit_remaining: remaining,
             github_rate_limit_reset: reset,
@@ -102,6 +121,14 @@ impl Metrics {
 
     pub fn page(&self, result: &str) {
         self.pages
+            .get_or_create(&ResultLabels {
+                result: result.into(),
+            })
+            .inc();
+    }
+
+    pub fn badge(&self, result: &str) {
+        self.badges
             .get_or_create(&ResultLabels {
                 result: result.into(),
             })
@@ -137,7 +164,8 @@ mod tests {
         assert!(out.contains(
             r#"chart_notes_upstream_requests_total{upstream="github",result="rate_limited"} 0"#
         ));
-        assert!(out.contains("chart_notes_charts 3"));
+        assert!(out.contains("chart_notes_overrides 3"));
+        assert!(out.contains(r#"chart_notes_badges_total{result="pending"} 0"#));
         assert!(out.contains("chart_notes_github_rate_limit_remaining -1"));
         assert!(out.contains(r#"chart_notes_build_info{version=""#));
     }

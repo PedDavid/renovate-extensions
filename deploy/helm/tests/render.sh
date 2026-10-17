@@ -28,14 +28,17 @@ out=$(render --set github.existingSecret=gh)
 [[ $(yq 'select(.kind == "Deployment") | .spec.template.spec.volumes[] | select(.name == "github") | .secret.secretName' <<<"$out") == gh ]] \
   || fail "token Secret not mounted"
 
-# Extra charts reach the app as a file, and changing them rolls the pod.
-a=$(render --set-json 'charts={"x":{"repo":"https://charts.example.com","app":"a/b"}}')
-b=$(render --set-json 'charts={"x":{"repo":"https://charts.example.com","app":"a/c"}}')
-[[ $(env_value CHART_NOTES_CHARTS_FILE <<<"$a") == /etc/chart-notes/charts/charts.json ]] || fail "charts file not set"
-[[ $(yq 'select(.kind == "ConfigMap") | .data."charts.json"' <<<"$a" | yq -p json '.x.app') == a/b ]] \
-  || fail "charts ConfigMap does not hold the charts as JSON"
-checksum='select(.kind == "Deployment") | .spec.template.metadata.annotations."checksum/charts"'
-[[ $(yq "$checksum" <<<"$a") != $(yq "$checksum" <<<"$b") ]] || fail "charts change does not roll the pod"
+# Overrides reach the app as a file, and changing them rolls the pod.
+a=$(render --set-json 'overrides={"x":{"repo":"https://charts.example.com","app":"a/b"}}')
+b=$(render --set-json 'overrides={"x":{"app":"a/c"}}')
+[[ $(env_value CHART_NOTES_OVERRIDES_FILE <<<"$a") == /etc/chart-notes/overrides/overrides.json ]] \
+  || fail "overrides file not set"
+[[ $(yq 'select(.kind == "ConfigMap") | .data."overrides.json"' <<<"$a" | yq -p json '.x.app') == a/b ]] \
+  || fail "overrides ConfigMap does not hold the overrides as JSON"
+checksum='select(.kind == "Deployment") | .spec.template.metadata.annotations."checksum/overrides"'
+[[ $(yq "$checksum" <<<"$a") != $(yq "$checksum" <<<"$b") ]] || fail "an overrides change does not roll the pod"
+# No overrides: no ConfigMap, no file.
+[[ -z $(render | yq 'select(.kind == "ConfigMap") | .kind') ]] || fail "ConfigMap rendered without overrides"
 
 # The public URL follows the Ingress unless set.
 [[ $(render --set ingress.enabled=true | env_value CHART_NOTES_PUBLIC_URL) == https://chart-notes.example.com ]] \

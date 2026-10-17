@@ -1,12 +1,12 @@
-{{- if .Values.charts }}
+{{- if .Values.overrides }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "chart-notes.fullname" . }}-charts
+  name: {{ include "chart-notes.fullname" . }}-overrides
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "chart-notes.labels" . | nindent 4 }}
 data:
-  charts.json: |
-    {{- toPrettyJson .Values.charts | nindent 4 }}
+  overrides.json: |
+    {{- toPrettyJson .Values.overrides | nindent 4 }}
 {{- end }}

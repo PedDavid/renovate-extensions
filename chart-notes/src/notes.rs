@@ -80,6 +80,100 @@ pub fn compare_url(app: &str, old: &str, new: &str, releases: &[Release]) -> Str
     )
 }
 
+/// One entry of a chart version's `artifacthub.io/changes` annotation.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Change {
+    /// added, changed, deprecated, removed, fixed or security; None when
+    /// the chart gives plain strings.
+    pub kind: Option<String>,
+    pub description: String,
+    /// (name, url), http(s) only.
+    pub links: Vec<(String, String)>,
+}
+
+/// Parses an `artifacthub.io/changes` annotation: a YAML list of strings,
+/// or of `{kind, description, links: [{name, url}]}`. Anything else is no
+/// changes rather than an error: it's free-form text in someone's chart.
+pub fn parse_changes(raw: &str) -> Vec<Change> {
+    let Ok(serde_yaml::Value::Sequence(items)) = serde_yaml::from_str::<serde_yaml::Value>(raw)
+    else {
+        return Vec::new();
+    };
+    fn text(v: Option<&serde_yaml::Value>) -> Option<&str> {
+        v.and_then(|v| v.as_str()).map(str::trim)
+    }
+    items
+        .iter()
+        .filter_map(|item| match item {
+            serde_yaml::Value::String(s) => Some(Change {
+                kind: None,
+                description: s.trim().to_string(),
+                links: Vec::new(),
+            }),
+            serde_yaml::Value::Mapping(m) => {
+                let description = text(m.get("description"))?.to_string();
+                let kind = text(m.get("kind"))
+                    .map(str::to_ascii_lowercase)
+                    .filter(|k| {
+                        matches!(
+                            k.as_str(),
+                            "added" | "changed" | "deprecated" | "removed" | "fixed" | "security"
+                        )
+                    });
+                let links = m
+                    .get("links")
+                    .and_then(|l| l.as_sequence())
+                    .map(|links| {
+                        links
+                            .iter()
+                            .filter_map(|l| {
+                                let url = text(l.get("url"))?;
+                                let parsed = url::Url::parse(url).ok()?;
+                                matches!(parsed.scheme(), "http" | "https").then(|| {
+                                    let name = text(l.get("name")).unwrap_or(url);
+                                    (name.to_string(), parsed.to_string())
+                                })
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                Some(Change {
+                    kind,
+                    description,
+                    links,
+                })
+            }
+            _ => None,
+        })
+        .filter(|c| !c.description.is_empty())
+        .collect()
+}
+
+/// Chart versions after the lower of `from` and `to` up to the higher one,
+/// newest first, in the index's terms (all of them, pre-releases too: the
+/// chart's own history is what was picked).
+pub fn chart_versions_between<'a>(
+    versions: &'a [crate::sources::ChartVersion],
+    from: &str,
+    to: &str,
+) -> Vec<&'a crate::sources::ChartVersion> {
+    let (Some(a), Some(b)) = (version::parse(from), version::parse(to)) else {
+        return Vec::new();
+    };
+    let (low, high) = if a.cmp_precedence(&b).is_le() {
+        (a, b)
+    } else {
+        (b, a)
+    };
+    let mut found: Vec<(semver::Version, &crate::sources::ChartVersion)> = versions
+        .iter()
+        .filter_map(|v| version::parse(&v.version).map(|p| (p, v)))
+        .filter(|(p, _)| p.cmp_precedence(&low).is_gt() && p.cmp_precedence(&high).is_le())
+        .collect();
+    found.sort_by(|(a, _), (b, _)| b.cmp_precedence(a));
+    found.into_iter().map(|(_, v)| v).collect()
+}
+
 /// GitHub's rendering of release notes, reduced to what is safe to embed:
 /// no scripts, styles, forms or event handlers, only http(s) and mailto
 /// links (opening in a new tab), relative links resolved against `base`
@@ -178,6 +272,43 @@ mod tests {
     fn duplicate_tags_are_listed_once() {
         let releases = vec![release("1.2.3", false), release("v1.2.3", false)];
         assert_eq!(releases_between(&releases, "1.2.2", "1.2.3").len(), 1);
+    }
+
+    #[test]
+    fn changes_annotation_in_both_shapes() {
+        let structured = parse_changes(
+            "- kind: added\n  description: Add extraPorts.\n  links:\n    - name: \"PR #1\"\n      url: https://github.com/x/y/pull/1\n    - name: bad\n      url: javascript:alert(1)\n- kind: Weird\n  description: Something.\n- kind: fixed\n",
+        );
+        assert_eq!(structured.len(), 2);
+        assert_eq!(structured[0].kind.as_deref(), Some("added"));
+        assert_eq!(
+            structured[0].links,
+            [(
+                "PR #1".to_string(),
+                "https://github.com/x/y/pull/1".to_string()
+            )]
+        );
+        assert_eq!(structured[1].kind, None);
+        let plain = parse_changes("- Bump app to 1.2.3\n- Fix the PDB\n");
+        assert_eq!(plain.len(), 2);
+        assert_eq!(plain[1].description, "Fix the PDB");
+        assert!(parse_changes("just text").is_empty());
+        assert!(parse_changes(": : not yaml [").is_empty());
+    }
+
+    #[test]
+    fn chart_versions_in_range_newest_first() {
+        let v = |s: &str| crate::sources::ChartVersion {
+            version: s.into(),
+            ..Default::default()
+        };
+        let all = [v("1.4.0"), v("1.3.1"), v("1.3.0"), v("1.2.1")];
+        let got: Vec<_> = chart_versions_between(&all, "1.3.0", "1.4.0")
+            .iter()
+            .map(|c| c.version.as_str())
+            .collect();
+        assert_eq!(got, ["1.4.0", "1.3.1"]);
+        assert_eq!(chart_versions_between(&all, "1.4.0", "1.3.0").len(), 2);
     }
 
     #[test]

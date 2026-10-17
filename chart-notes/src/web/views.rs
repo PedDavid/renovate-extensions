@@ -3,7 +3,9 @@
 
 use jiff::{SignedDuration, Timestamp};
 
-use crate::charts::Chart;
+use crate::notes::Change;
+use crate::report::{ChartNotes, ChartRelease};
+use crate::resolve::Resolved;
 use crate::sources::{ChartVersion, Release};
 use crate::version;
 
@@ -46,23 +48,40 @@ pub fn safe_link(url: &str) -> Option<String> {
 #[derive(Clone, Debug)]
 pub struct ChartRow {
     pub name: String,
+    /// GitHub `owner/repo`, empty when unknown.
     pub app: String,
     pub app_url: String,
     pub repo: String,
     pub repo_host: String,
+    /// The chart's own GitHub `owner/repo`, empty when unknown.
+    pub source: String,
     pub note: String,
+    /// `source=…&repo=…`: carried on links so the next page finds the
+    /// chart the same way.
+    pub query: String,
 }
 
 impl ChartRow {
-    pub fn new(name: &str, chart: &Chart) -> ChartRow {
+    pub fn new(chart: &Resolved) -> ChartRow {
+        let mut query = url::form_urlencoded::Serializer::new(String::new());
+        if let Some(s) = &chart.source {
+            query.append_pair("source", &format!("https://github.com/{s}"));
+        }
+        query.append_pair("repo", chart.repo.as_str());
         ChartRow {
-            name: name.into(),
-            app: chart.app.clone(),
-            app_url: chart.app_url(),
+            name: chart.name.clone(),
+            app: chart.app.clone().unwrap_or_default(),
+            app_url: chart.app_url().unwrap_or_default(),
             repo: chart.repo.to_string(),
             repo_host: chart.repo.host_str().unwrap_or_default().into(),
+            source: chart.source.clone().unwrap_or_default(),
             note: chart.note.clone().unwrap_or_default(),
+            query: query.finish(),
         }
+    }
+
+    pub fn href(&self) -> String {
+        format!("/{}?{}", self.name, self.query)
     }
 
     pub fn matches(&self, q: &str) -> bool {
@@ -86,7 +105,7 @@ pub struct VersionRow {
 /// The newest `limit` versions, newest first, each linked to the bump from
 /// the one before it.
 pub fn version_rows(
-    chart: &str,
+    chart: &ChartRow,
     versions: &[ChartVersion],
     now: Timestamp,
     limit: usize,
@@ -135,8 +154,14 @@ impl Ord for Precedence {
     }
 }
 
-pub fn notes_href(chart: &str, from: &str, to: &str) -> String {
-    format!("/{chart}?from={}&to={}", query_value(from), query_value(to))
+pub fn notes_href(chart: &ChartRow, from: &str, to: &str) -> String {
+    format!(
+        "/{}?from={}&to={}&{}",
+        chart.name,
+        query_value(from),
+        query_value(to),
+        chart.query
+    )
 }
 
 /// Versions are mostly safe in a query, but `+` (build metadata) would read
@@ -183,6 +208,100 @@ impl ReleaseRow {
     }
 }
 
+/// One of the chart's own versions in a bump, with its changes.
+pub struct ChartReleaseRow {
+    pub version: String,
+    pub app_version: String,
+    pub created_date: String,
+    pub created_rel: String,
+    pub url: Option<String>,
+    /// "changes", "release" or "none".
+    pub kind: &'static str,
+    pub changes: Vec<ChangeRow>,
+    /// Sanitized HTML of the chart's GitHub release.
+    pub html: String,
+}
+
+pub struct ChangeRow {
+    /// added, changed, … or empty.
+    pub kind: String,
+    /// Escaped HTML: the description with `code` spans.
+    pub description_html: String,
+    pub links: Vec<(String, String)>,
+}
+
+impl ChangeRow {
+    fn new(c: &Change) -> ChangeRow {
+        ChangeRow {
+            kind: c.kind.clone().unwrap_or_default(),
+            description_html: code_spans(&c.description),
+            links: c.links.clone(),
+        }
+    }
+}
+
+fn escape_html(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
+}
+
+/// Escapes `text`, turning `backticked` spans into `<code>`, the one bit of
+/// Markdown change descriptions commonly use.
+pub fn code_spans(text: &str) -> String {
+    let parts: Vec<&str> = text.split('`').collect();
+    // An odd count of backticks leaves the last one literal.
+    let closed = if parts.len().is_multiple_of(2) {
+        parts.len() - 1
+    } else {
+        parts.len()
+    };
+    let mut out = String::new();
+    for (i, part) in parts.iter().enumerate() {
+        if i >= closed {
+            out.push('`');
+            out.push_str(&escape_html(part));
+        } else if i % 2 == 1 {
+            out.push_str("<code>");
+            out.push_str(&escape_html(part));
+            out.push_str("</code>");
+        } else {
+            out.push_str(&escape_html(part));
+        }
+    }
+    out
+}
+
+impl ChartReleaseRow {
+    pub fn new(r: &ChartRelease, now: Timestamp) -> ChartReleaseRow {
+        let (kind, changes, html) = match &r.notes {
+            ChartNotes::Changes(c) => (
+                "changes",
+                c.iter().map(ChangeRow::new).collect(),
+                String::new(),
+            ),
+            ChartNotes::Release(h) => ("release", Vec::new(), h.clone()),
+            ChartNotes::None => ("none", Vec::new(), String::new()),
+        };
+        ChartReleaseRow {
+            version: r.version.version.clone(),
+            app_version: r.version.app_version.clone().unwrap_or_default(),
+            created_date: r.version.created.map(fmt_date).unwrap_or_default(),
+            created_rel: r
+                .version
+                .created
+                .map(|t| relative(t, now))
+                .unwrap_or_default(),
+            url: r.url.as_deref().and_then(safe_link),
+            kind,
+            changes,
+            html,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,14 +317,31 @@ mod tests {
     }
 
     #[test]
+    fn code_spans_are_escaped() {
+        assert_eq!(
+            code_spans("Add `a<b>` & <i>x</i>"),
+            "Add <code>a&lt;b&gt;</code> &amp; &lt;i&gt;x&lt;/i&gt;"
+        );
+        assert_eq!(code_spans("odd ` tick"), "odd ` tick");
+        assert_eq!(code_spans("`a` and `b"), "<code>a</code> and `b");
+    }
+
+    #[test]
     fn formats() {
         let now: Timestamp = "2026-09-25T00:00:00Z".parse().unwrap();
         let later: Timestamp = "2026-10-07T00:00:00Z".parse().unwrap();
         assert_eq!(relative(later, now), "in 12d");
         assert_eq!(relative(now, later), "12d ago");
+        let chart = ChartRow::new(&Resolved {
+            name: "x".into(),
+            repo: "https://charts.example.com".parse().unwrap(),
+            app: None,
+            source: Some("x/charts".into()),
+            note: None,
+        });
         assert_eq!(
-            notes_href("x", "1.0.0+up1", "1.1.0"),
-            "/x?from=1.0.0%2Bup1&to=1.1.0"
+            notes_href(&chart, "1.0.0+up1", "1.1.0"),
+            "/x?from=1.0.0%2Bup1&to=1.1.0&source=https%3A%2F%2Fgithub.com%2Fx%2Fcharts&repo=https%3A%2F%2Fcharts.example.com%2F"
         );
     }
 
@@ -214,11 +350,18 @@ mod tests {
         let v = |version: &str, app: &str| ChartVersion {
             version: version.into(),
             app_version: Some(app.into()),
-            created: None,
+            ..Default::default()
         };
         let now = Timestamp::UNIX_EPOCH;
+        let chart = ChartRow::new(&Resolved {
+            name: "x".into(),
+            repo: "https://c.example".parse().unwrap(),
+            app: None,
+            source: None,
+            note: None,
+        });
         let rows = version_rows(
-            "x",
+            &chart,
             &[v("1.0.0", "a"), v("1.1.0", "b"), v("1.0.1", "a")],
             now,
             10,
@@ -230,8 +373,16 @@ mod tests {
         assert_eq!(
             got,
             [
-                ("1.1.0", Some("/x?from=1.0.1&to=1.1.0"), true),
-                ("1.0.1", Some("/x?from=1.0.0&to=1.0.1"), false),
+                (
+                    "1.1.0",
+                    Some("/x?from=1.0.1&to=1.1.0&repo=https%3A%2F%2Fc.example%2F"),
+                    true
+                ),
+                (
+                    "1.0.1",
+                    Some("/x?from=1.0.0&to=1.0.1&repo=https%3A%2F%2Fc.example%2F"),
+                    false
+                ),
                 ("1.0.0", None, false),
             ]
         );

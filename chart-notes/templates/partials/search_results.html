@@ -2,10 +2,10 @@
 <div role="group" aria-labelledby="command-charts">
   <span role="presentation" class="command-heading" id="command-charts">Charts</span>
   {% for row in rows %}
-  <a role="option" id="command-option-{{ loop.index }}" href="/{{ row.name }}" aria-selected="{% if loop.first %}true{% else %}false{% endif %}"{% if loop.first %} class="active"{% endif %}>
+  <a role="option" id="command-option-{{ loop.index }}" href="{{ row.href }}" aria-selected="{% if loop.first %}true{% else %}false{% endif %}"{% if loop.first %} class="active"{% endif %}>
     {% include "icons/package.svg" %}
     <span class="truncate">{{ row.name }}</span>
-    <span class="ms-auto truncate" data-shortcut>{{ row.app }}</span>
+    <span class="ms-auto truncate" data-shortcut>{{ row.detail }}</span>
   </a>
   {% endfor %}
 </div>

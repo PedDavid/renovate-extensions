@@ -2,6 +2,7 @@
 //! separate metrics/health router. Everything is read-only and public: there
 //! are no POST routes, sessions or CSRF tokens.
 
+mod badge;
 mod pages;
 mod views;
 
@@ -21,8 +22,8 @@ use rust_embed::RustEmbed;
 use tower_http::trace::TraceLayer;
 use url::Url;
 
-use crate::charts::Charts;
 use crate::metrics::Metrics;
+use crate::resolve::Resolver;
 use crate::sources::Sources;
 
 #[derive(Clone)]
@@ -31,8 +32,10 @@ pub struct AppState {
 }
 
 pub struct Inner {
-    pub charts: Charts,
+    pub resolver: Arc<Resolver>,
     pub sources: Arc<dyn Sources>,
+    /// Lookups badges have started, so repeated badge loads share one.
+    pub warming: badge::Warming,
     pub metrics: Arc<Metrics>,
     pub public_url: Option<Url>,
     pub demo: bool,
@@ -43,7 +46,7 @@ pub struct Inner {
 
 impl AppState {
     pub fn new(
-        charts: Charts,
+        resolver: Arc<Resolver>,
         sources: Arc<dyn Sources>,
         metrics: Arc<Metrics>,
         public_url: Option<Url>,
@@ -51,8 +54,9 @@ impl AppState {
     ) -> Self {
         AppState {
             inner: Arc::new(Inner {
-                charts,
+                resolver,
                 sources,
+                warming: badge::Warming::default(),
                 metrics,
                 public_url,
                 demo,
@@ -82,6 +86,10 @@ pub enum AppError {
     NotFound { message: String, back: Back },
     #[error("{message}")]
     Upstream { message: String, back: Back },
+    /// A rendered page that isn't a success, served with 200 all the same
+    /// (picking among repositories).
+    #[error("page")]
+    Page(String),
     #[error("{0}")]
     Internal(String),
 }
@@ -129,6 +137,9 @@ struct ErrorPage<'a> {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        if let AppError::Page(html) = self {
+            return Html(html).into_response();
+        }
         let (status, title, back) = match &self {
             AppError::NotFound { back, .. } => (StatusCode::NOT_FOUND, "Not found", back.clone()),
             AppError::Upstream { back, .. } => (
@@ -136,7 +147,7 @@ impl IntoResponse for AppError {
                 "Upstream unavailable",
                 back.clone(),
             ),
-            AppError::Internal(_) => (
+            AppError::Internal(_) | AppError::Page(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Something went wrong",
                 Back::home(),
@@ -237,6 +248,7 @@ pub fn router(state: AppState) -> Router {
         .route("/search", get(pages::search))
         .route("/assets/{*path}", get(asset))
         .route("/{chart}", get(pages::chart))
+        .route("/{chart}/badge.svg", get(badge::badge))
         .fallback(|| async { AppError::not_found("page not found") })
         .layer(middleware::from_fn(security_headers))
         .layer(TraceLayer::new_for_http().make_span_with(|req: &Request| {

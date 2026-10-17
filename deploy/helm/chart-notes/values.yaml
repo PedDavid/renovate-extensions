@@ -7,13 +7,16 @@ image:
 # Defaults to https://<ingress.host> when the Ingress is enabled.
 publicUrl: ""
 
-# Charts on top of the image's bundled list (chart-notes/charts.yaml), or
-# replacing its entries. Keyed by Renovate's packageName:
+# chart-notes finds a chart's Helm repository from Renovate's sourceUrl and
+# Artifact Hub, and the app from the chart's sources. Override any of that
+# per chart (Renovate's packageName); every field is optional:
+#   kube-prometheus-stack:
+#     app: prometheus-operator/prometheus-operator  # GitHub repo with the app's releases
+#     note: Only prometheus-operator's version.     # shown on every page for the chart
 #   my-chart:
 #     repo: https://charts.example.com   # Helm repository serving index.yaml
-#     app: owner/repo                    # GitHub repository with the app's releases
-#     note: Optional caveat shown on the page.
-charts: {}
+#     source: me/my-charts               # GitHub repo the chart is released from
+overrides: {}
 
 # Unauthenticated, GitHub allows 60 API requests an hour; any token, even
 # one without scopes, allows 5000. The Secret is mounted as a file.
@@ -29,7 +32,10 @@ service:
   type: ClusterIP
   port: 80
 
-# The pages are public: Renovate PRs link to them.
+# Renovate PRs link to the pages and show their badge. GitHub fetches the
+# badge through its image proxy, so it only shows when the badge path is
+# public; Gitea, Forgejo and self-managed GitLab fetch it from the viewer's
+# browser, so LAN-only works there.
 ingress:
   enabled: false
   className: ""

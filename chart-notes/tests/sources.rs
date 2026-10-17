@@ -8,21 +8,14 @@ use serde_json::json;
 use wiremock::matchers::{header, header_exists, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-use chart_notes::charts::{self, Chart};
 use chart_notes::metrics::Metrics;
 use chart_notes::sources::{HttpSources, Sources, UpstreamError};
+use url::Url;
 
 const INDEX: &str = include_str!("fixtures/index.yaml");
 
-fn chart(server: &MockServer) -> Chart {
-    charts::parse(&format!(
-        "alloy: {{repo: '{}/charts', app: grafana/alloy}}",
-        server.uri()
-    ))
-    .unwrap()
-    .get("alloy")
-    .unwrap()
-    .clone()
+fn repo(server: &MockServer) -> Url {
+    format!("{}/charts", server.uri()).parse().unwrap()
 }
 
 fn sources(server: &MockServer, token: Option<&str>, ttl: Duration) -> (HttpSources, Arc<Metrics>) {
@@ -30,6 +23,7 @@ fn sources(server: &MockServer, token: Option<&str>, ttl: Duration) -> (HttpSour
     let sources = HttpSources::new(
         format!("{}/", server.uri()).parse().unwrap(),
         token.map(str::to_string),
+        format!("{}/hub/", server.uri()).parse().unwrap(),
         ttl,
         metrics.clone(),
     )
@@ -59,14 +53,9 @@ async fn index_is_cached_within_the_ttl() {
         .await;
     let (sources, metrics) = sources(&server, None, Duration::from_secs(60));
     for _ in 0..3 {
-        let index = sources.index(&chart(&server)).await.unwrap();
+        let index = sources.index(&repo(&server), "alloy").await.unwrap();
         assert_eq!(
-            index
-                .value
-                .find("alloy", "1.13.1")
-                .unwrap()
-                .app_version
-                .as_deref(),
+            index.value.find("1.13.1").unwrap().app_version.as_deref(),
             Some("v1.20.1")
         );
     }
@@ -98,10 +87,10 @@ async fn index_refresh_is_conditional() {
         .mount(&server)
         .await;
     let (sources, metrics) = sources(&server, None, Duration::ZERO);
-    sources.index(&chart(&server)).await.unwrap();
-    let again = sources.index(&chart(&server)).await.unwrap();
+    sources.index(&repo(&server), "alloy").await.unwrap();
+    let again = sources.index(&repo(&server), "alloy").await.unwrap();
     assert!(again.stale.is_none());
-    assert!(again.value.find("alloy", "1.13.0").is_some());
+    assert!(again.value.find("1.13.0").is_some());
     assert!(
         metrics
             .encode()
@@ -124,10 +113,10 @@ async fn failed_refresh_serves_the_last_copy() {
         .mount(&server)
         .await;
     let (sources, _) = sources(&server, None, Duration::ZERO);
-    sources.index(&chart(&server)).await.unwrap();
-    let stale = sources.index(&chart(&server)).await.unwrap();
+    sources.index(&repo(&server), "alloy").await.unwrap();
+    let stale = sources.index(&repo(&server), "alloy").await.unwrap();
     assert!(stale.stale.as_deref().unwrap().contains("503"));
-    assert!(stale.value.find("alloy", "1.13.0").is_some());
+    assert!(stale.value.find("1.13.0").is_some());
 }
 
 #[tokio::test]
@@ -139,7 +128,7 @@ async fn bad_index_is_a_parse_error() {
         .mount(&server)
         .await;
     let (sources, _) = sources(&server, None, Duration::ZERO);
-    let err = sources.index(&chart(&server)).await.unwrap_err();
+    let err = sources.index(&repo(&server), "alloy").await.unwrap_err();
     assert!(matches!(err, UpstreamError::Parse { .. }), "{err}");
 }
 
@@ -290,4 +279,36 @@ async fn release_without_notes() {
     let (sources, _) = sources(&server, None, Duration::from_secs(60));
     let notes = sources.notes("grafana/alloy", "v1.0.0").await.unwrap();
     assert!(notes.value.html.is_none());
+}
+
+#[tokio::test]
+async fn artifact_hub_search() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/hub/api/v1/packages/search"))
+        .and(query_param("ts_query_web", "alloy"))
+        .and(query_param("kind", "0"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "packages": [
+                {"name": "alloy", "repository": {"url": "https://grafana.github.io/helm-charts",
+                  "name": "grafana", "display_name": "Grafana", "official": true, "verified_publisher": true}},
+                {"name": "alloy-operator", "repository": {"url": "https://x.example", "name": "x"}}
+            ]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let (sources, metrics) = sources(&server, None, Duration::from_secs(60));
+    let found = sources.search("alloy").await.unwrap();
+    assert_eq!(found.value.len(), 1);
+    assert_eq!(
+        found.value[0].repo.as_str(),
+        "https://grafana.github.io/helm-charts"
+    );
+    sources.search("alloy").await.unwrap();
+    assert!(
+        metrics
+            .encode()
+            .contains(r#"upstream="artifacthub",result="ok"} 1"#)
+    );
 }

@@ -141,7 +141,7 @@ expression: html
   <main class="mx-auto max-w-5xl px-4 py-6">
     
 <div class="flex flex-col gap-6">
-  <a href="/traefik" class="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-4">
+  <a href="/traefik?source=https%3A%2F%2Fgithub.com%2Ftraefik%2Ftraefik-helm-chart&#38;repo=https%3A%2F%2Ftraefik.github.io%2Fcharts" class="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-4">
     <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
@@ -223,7 +223,7 @@ expression: html
   <circle cx="6" cy="6" r="3" />
   <path d="M13 6h3a2 2 0 0 1 2 2v7" />
   <path d="M11 18H8a2 2 0 0 1-2-2V9" />
-</svg> Full diff
+</svg> Full app diff
     </a>
     
   </div>
@@ -231,6 +231,66 @@ expression: html
   
 
   
+
+  
+
+  <div class="flex flex-col gap-3">
+    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
+      Chart changes
+      <span class="text-muted-foreground font-normal">· 1 chart release</span>
+      <span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">traefik/traefik-helm-chart</code></span>
+    </h2>
+    
+    <details class="release" open>
+      <summary>
+        <span class="release-chevron"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg></span>
+        <span class="font-semibold">traefik-37.2.0</span>
+        <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v3.5.3</code></span>
+        <span class="text-sm text-muted-foreground" title="2026-10-01">16d ago</span>
+        
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/traefik/traefik-helm-chart/releases/tag/traefik-37.2.0" target="_blank" rel="noopener noreferrer">GitHub <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 3h6v6" />
+  <path d="M10 14 21 3" />
+  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+</svg></a>
+        
+      </summary>
+      <div class="release-body">
+        
+        <div class="prose prose-sm dark:prose-invert max-w-none"><h2>What's changed</h2>
+<ul>
+<li>feat(deps): update traefik to v3.5.3 by <a href="https://github.com/renovate-bot" target="_blank" rel="noopener noreferrer nofollow">@renovate-bot</a></li>
+<li>fix(gateway): honour <code>gateway.listeners.*.hostname</code> by <a href="https://github.com/mloiseleur" target="_blank" rel="noopener noreferrer nofollow">@mloiseleur</a></li>
+</ul></div>
+        
+      </div>
+    </details>
+    
+  </div>
 
   
   <div class="alert" data-variant="destructive" role="alert">
@@ -250,7 +310,7 @@ expression: html
   <path d="M12 9v4" />
   <path d="M12 17h.01" />
 </svg>
-    <h2>Couldn't list the releases</h2>
+    <h2>Couldn't list the app's releases</h2>
     <section>
       <p>GitHub&#39;s rate limit is used up until 09:00 UTC; a token raises it (github.existingSecret in the Helm chart)</p>
       <p>The <a class="underline underline-offset-4" href="https://github.com/traefik/traefik/compare/v3.5.2...v3.5.3" target="_blank" rel="noopener noreferrer">full diff</a> and <a class="underline underline-offset-4" href="https://github.com/traefik/traefik/releases" target="_blank" rel="noopener noreferrer">all releases</a> are on GitHub.</p>

@@ -41,6 +41,18 @@
     @apply text-muted-foreground tabular-nums;
   }
 
+  /* The kind of a chart change (artifacthub.io/changes). Removals and
+     security fixes stand out by lightness as well as hue. */
+  .badge.change-kind {
+    @apply border-transparent bg-secondary text-secondary-foreground;
+  }
+  .badge.change-kind:is([data-kind='removed'], [data-kind='security']) {
+    @apply bg-destructive text-white;
+  }
+  .badge.change-kind[data-kind='deprecated'] {
+    @apply border-border bg-transparent text-foreground;
+  }
+
   /* A release and its notes, collapsible. */
   .release {
     @apply rounded-xl border bg-card text-card-foreground;

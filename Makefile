@@ -29,7 +29,7 @@ helm-lint: ## Lint and render the chart
 	$(HELM) lint deploy/helm/chart-notes
 	$(HELM) template chart-notes deploy/helm/chart-notes --set ingress.enabled=true \
 	  --set serviceMonitor.enabled=true --set github.existingSecret=gh \
-	  --set-json 'charts={"x":{"repo":"https://charts.example.com","app":"a/b"}}' >/dev/null
+	  --set-json 'overrides={"x":{"repo":"https://charts.example.com","app":"a/b"}}' >/dev/null
 	deploy/helm/tests/render.sh
 
 image: ## Build the chart-notes image

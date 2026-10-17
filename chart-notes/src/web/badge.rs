@@ -1,5 +1,6 @@
 //! `/<chart>/badge.svg?from=…&to=…&source=…`: a badge for a Renovate PR's
-//! table. Loading it starts every lookup the notes page needs, so the page
+//! table. Loading it starts every lookup the notes page needs (the values
+//! diff included), so the page
 //! is ready by the time someone clicks. GitHub fetches PR images through its
 //! own proxy (which needs chart-notes to be public); Gitea, Forgejo and
 //! self-managed GitLab let the viewer's browser fetch it (LAN is enough).
@@ -102,6 +103,16 @@ pub async fn badge(
             )
             .await;
             let _ = tx.send(Some(summarize(&report)));
+            // The values diff tab too: two package downloads.
+            if let Ok(r) = report {
+                let header = report::Header {
+                    chart: r.chart,
+                    from: r.from,
+                    to: r.to,
+                    direction: r.direction,
+                };
+                report::values_diff(state.inner.sources.as_ref(), &header).await;
+            }
         });
     });
     let summary = match tokio::time::timeout(WAIT, rx.wait_for(Option::is_some)).await {

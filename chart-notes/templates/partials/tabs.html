@@ -1,0 +1,9 @@
+<div class="flex flex-wrap items-end justify-between gap-x-3 border-b">
+  <nav role="tablist" aria-label="What changed" class="tab-bar">
+    {% for t in tabs %}
+    <a role="tab" data-tab="{{ t.id }}" href="{{ t.page_href }}" hx-get="{{ t.fragment_href }}" hx-target="#notes" hx-swap="outerHTML" hx-push-url="{{ t.page_href }}" aria-selected="{% if t.selected %}true{% else %}false{% endif %}"{% if t.selected %} aria-current="page"{% endif %}>
+      {{ t.label }}{% if !t.count.is_empty() %} <span class="tab-count">· {{ t.count }}</span>{% endif %}
+    </a>
+    {% endfor %}
+  </nav>
+</div>

@@ -16,21 +16,31 @@ drops the chart's `appVersion`, so no PR template can link to the app's notes
 directly.
 
 `GET /<chart>?from=<version>&to=<version>&source=<sourceUrl>` shows what
-changed between two chart versions:
+changed between two chart versions, as one timeline, newest first:
 
-- **Chart changes**, from the chart versions' `artifacthub.io/changes`
-  annotations in the Helm repository's `index.yaml`. When the chart has none,
-  they come from the chart repository's GitHub releases (chart-releaser tags
-  them `<chart>-<version>`).
-- **App release notes**: the stable releases of the app between the two
-  `appVersion`s, newest first, as GitHub renders them, with a link to the full
-  diff. A downgrade lists what it rolls back.
+- **Chart releases**, with their changes from the versions'
+  `artifacthub.io/changes` annotations in the Helm repository's `index.yaml`.
+  When the chart has none, they come from the chart repository's GitHub
+  releases (chart-releaser tags them `<chart>-<version>`).
+- **App releases**: the stable releases of the app between the two
+  `appVersion`s, with their notes as GitHub renders them, and a link to the
+  full diff. A downgrade lists what it rolls back.
+
+Tabs filter it (**All**, **App**, **Chart**), and **Values diff** compares
+the chart's default `values.yaml` between the two versions, read from each
+version's package: a line diff by top-level key, and which keys were added,
+changed or removed (a removed key you set no longer does anything). Each tab
+has its own URL (`&tab=app|chart|values`).
+
+The page answers as soon as the chart's index is known: the header shows
+the versions right away and the rest loads into it. Without JavaScript,
+`&full=1` renders everything in one response.
 
 ![Notes for an alloy bump](docs/screenshots/notes.png)
 
-| A chart's versions (dark mode) | All charts and the Renovate config |
-|---|---|
-| ![Versions](docs/screenshots/versions-dark.png) | ![Charts](docs/screenshots/charts.png) |
+| The values diff (dark mode) | A chart's versions (dark mode) | All charts and the Renovate config |
+|---|---|---|
+| ![Values diff](docs/screenshots/values-diff-dark.png) | ![Versions](docs/screenshots/versions-dark.png) | ![Charts](docs/screenshots/charts.png) |
 
 - **`/`** lists the charts looked up so far, a form to look one up, and the
   Renovate config to paste, with this instance's URL filled in.
@@ -62,7 +72,8 @@ covered, not OCI-hosted ones.
 
 The column is a badge linking to the notes page. Loading the badge starts
 every lookup the page needs (the chart's repository, its changes, the app's
-releases and their notes), so the page is ready by the time someone clicks.
+releases and their notes, the two packages for the values diff), so the page
+is ready by the time someone clicks.
 It answers within a second and a half either way: with what changed
 (`app v1.10.2 → v1.11.2 · 4 releases`) once that's known, else
 "looking up", and a later view shows the result.
@@ -121,6 +132,9 @@ an `app` that isn't `owner/repo` stops the pod with the reason in its log.
   handlers, non-http links), and the page only loads images from GitHub's
   hosts. Each release's notes take one API request. A page loads the 20
   newest app releases' notes and 10 chart releases', and links to the rest.
+- **Chart packages** for the values diff are downloaded from the Helm
+  repository (up to 20 MB each) and kept for a week: a published version
+  doesn't change.
 - **Caching.** Each chart's index entries, each app's release list and each
   release's notes are cached in memory for `cacheTtl` (10 minutes); where a
   chart comes from, for 36 times that. Per-chart and per-release entries

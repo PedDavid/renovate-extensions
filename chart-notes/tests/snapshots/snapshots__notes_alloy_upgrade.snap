@@ -205,45 +205,52 @@ expression: html
         <span class="text-muted-foreground">Chart from <code class="text-xs">grafana.github.io</code></span>
       </div>
     </div>
+  </div>
+
+  
+
+  
+  <div id="notes" class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-end justify-between gap-x-3 border-b">
+  <nav role="tablist" aria-label="What changed" class="tab-bar">
     
-    <a class="btn" data-variant="outline" href="https://github.com/grafana/alloy/compare/v1.10.2...v1.11.2" target="_blank" rel="noopener noreferrer">
-      <svg
-  aria-hidden="true"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <circle cx="18" cy="18" r="3" />
-  <circle cx="6" cy="6" r="3" />
-  <path d="M13 6h3a2 2 0 0 1 2 2v7" />
-  <path d="M11 18H8a2 2 0 0 1-2-2V9" />
-</svg> Full app diff
+    <a role="tab" data-tab="all" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts" hx-get="/alloy/timeline?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=all" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts" aria-selected="true" aria-current="page">
+      All <span class="tab-count">· 6</span>
     </a>
     
-  </div>
-
-  
-
-  
-
-  
-
-  <div class="flex flex-col gap-3">
-    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
-      Chart changes
-      <span class="text-muted-foreground font-normal">· 2 chart releases</span>
-      <span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">grafana/helm-charts</code></span>
-    </h2>
+    <a role="tab" data-tab="app" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=app" hx-get="/alloy/timeline?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=app" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=app" aria-selected="false">
+      App <span class="tab-count">· 4</span>
+    </a>
     
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <a role="tab" data-tab="chart" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=chart" hx-get="/alloy/timeline?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=chart" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=chart" aria-selected="false">
+      Chart <span class="tab-count">· 2</span>
+    </a>
+    
+    <a role="tab" data-tab="values" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=values" hx-get="/alloy/values?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=values" aria-selected="false">
+      Values diff
+    </a>
+    
+  </nav>
+</div>
+
+  
+  
+
+  
+  
+  
+  
+
+  
+
+  <ol class="timeline">
+    
+    <li>
+      
+      <div class="timeline-date" title="2026-10-08">8d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -257,11 +264,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">alloy-1.4.0</span>
-        <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v1.11.2</code></span>
-        <span class="text-sm text-muted-foreground" title="2026-10-08">8d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/helm-charts/releases/tag/alloy-1.4.0" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="chart">Chart</span>
+          <span class="font-semibold">alloy-1.4.0</span>
+          <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v1.11.2</code></span>
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/helm-charts/releases/tag/alloy-1.4.0" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -277,101 +284,39 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <ul class="flex flex-col gap-1.5 text-sm">
           
-          <li class="flex flex-wrap items-baseline gap-2">
-            <span class="badge change-kind" data-kind="added">added</span>
-            <span>Add <code>alloy.extraPorts</code> to expose extra container ports.</span>
-            <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/helm-charts/pull/3911" target="_blank" rel="noopener noreferrer nofollow">PR #3911</a>
-          </li>
+        </summary>
+        <div class="release-body">
           
-          <li class="flex flex-wrap items-baseline gap-2">
-            <span class="badge change-kind" data-kind="changed">changed</span>
-            <span>Bump Alloy to v1.11.2.</span>
+          <ul class="flex flex-col gap-1.5 text-sm">
             
-          </li>
-          
-        </ul>
-        
-      </div>
-    </details>
-    
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
-  aria-hidden="true"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="m9 18 6-6-6-6" />
-</svg></span>
-        <span class="font-semibold">alloy-1.3.1</span>
-        <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v1.11.0</code></span>
-        <span class="text-sm text-muted-foreground" title="2026-09-30">17d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/helm-charts/releases/tag/alloy-1.3.1" target="_blank" rel="noopener noreferrer">GitHub <svg
-  aria-hidden="true"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
-  stroke-width="2"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M15 3h6v6" />
-  <path d="M10 14 21 3" />
-  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-</svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <ul class="flex flex-col gap-1.5 text-sm">
-          
-          <li class="flex flex-wrap items-baseline gap-2">
-            <span class="badge change-kind" data-kind="fixed">fixed</span>
-            <span>Fix the PodDisruptionBudget template when <code>replicas</code> is 1.</span>
-            <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/helm-charts/pull/3890" target="_blank" rel="noopener noreferrer nofollow">PR #3890</a>
-          </li>
-          
-          <li class="flex flex-wrap items-baseline gap-2">
-            <span class="badge change-kind" data-kind="changed">changed</span>
-            <span>Bump Alloy to v1.11.0.</span>
+            <li class="flex flex-wrap items-baseline gap-2">
+              <span class="badge change-kind" data-kind="added">added</span>
+              <span>Add <code>alloy.extraPorts</code> to expose extra container ports.</span>
+              <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/helm-charts/pull/3911" target="_blank" rel="noopener noreferrer nofollow">PR #3911</a>
+            </li>
             
-          </li>
+            <li class="flex flex-wrap items-baseline gap-2">
+              <span class="badge change-kind" data-kind="changed">changed</span>
+              <span>Bump Alloy to v1.11.2.</span>
+              
+            </li>
+            
+          </ul>
           
-        </ul>
-        
-      </div>
-    </details>
+        </div>
+      </details>
+      
+      
+    </li>
     
-  </div>
-
-  
-  <div class="flex flex-col gap-3">
-    <h2 class="flex flex-wrap items-baseline gap-x-2 text-lg font-semibold">
-      App release notes
-      <span class="text-muted-foreground font-normal">· 4 releases</span>
-      <span class="ms-auto text-sm font-normal text-muted-foreground">from <code class="text-xs">grafana/alloy</code></span>
-    </h2>
-    
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      
+      <div class="timeline-date" title="2026-10-07">10d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -385,11 +330,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">v1.11.2</span>
-        
-        <span class="text-sm text-muted-foreground" title="2026-10-07">10d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.2" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="app">App</span>
+          <span class="font-semibold">v1.11.2</span>
+          
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.2" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -405,22 +350,28 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Bugfixes</h3>
+          
+        </summary>
+        <div class="release-body">
+          
+          <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Bugfixes</h3>
 <ul>
 <li>Fix <code>loki.source.file</code> missing lines after a log rotation. (<a href="https://github.com/grafana/alloy/pull/4501" target="_blank" rel="noopener noreferrer nofollow">#4501</a>)</li>
 <li>Fix a panic in <code>otelcol.processor.transform</code> on empty statements. (<a href="https://github.com/grafana/alloy/pull/4498" target="_blank" rel="noopener noreferrer nofollow">#4498</a>)</li>
 </ul></div>
-        
-      </div>
-    </details>
+          
+        </div>
+      </details>
+      
+    </li>
     
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      
+      <div class="timeline-date" title="2026-10-02">15d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -434,11 +385,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">v1.11.1</span>
-        
-        <span class="text-sm text-muted-foreground" title="2026-10-02">15d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.1" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="app">App</span>
+          <span class="font-semibold">v1.11.1</span>
+          
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.1" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -454,21 +405,26 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Bugfixes</h3>
+          
+        </summary>
+        <div class="release-body">
+          
+          <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Bugfixes</h3>
 <ul>
 <li>Restore the <code>--stability.level</code> flag's default. (<a href="https://github.com/grafana/alloy/pull/4470" target="_blank" rel="noopener noreferrer nofollow">#4470</a>)</li>
 </ul></div>
-        
-      </div>
-    </details>
+          
+        </div>
+      </details>
+      
+    </li>
     
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      <div class="timeline-date" title="2026-09-30">17d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -482,11 +438,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">v1.11.0</span>
-        
-        <span class="text-sm text-muted-foreground" title="2026-09-29">18d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.0" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="chart">Chart</span>
+          <span class="font-semibold">alloy-1.3.1</span>
+          <span class="text-sm text-muted-foreground">ships app <code class="text-xs">v1.11.0</code></span>
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/helm-charts/releases/tag/alloy-1.3.1" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -502,11 +458,77 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Breaking changes</h3>
+          
+        </summary>
+        <div class="release-body">
+          
+          <ul class="flex flex-col gap-1.5 text-sm">
+            
+            <li class="flex flex-wrap items-baseline gap-2">
+              <span class="badge change-kind" data-kind="fixed">fixed</span>
+              <span>Fix the PodDisruptionBudget template when <code>replicas</code> is 1.</span>
+              <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/helm-charts/pull/3890" target="_blank" rel="noopener noreferrer nofollow">PR #3890</a>
+            </li>
+            
+            <li class="flex flex-wrap items-baseline gap-2">
+              <span class="badge change-kind" data-kind="changed">changed</span>
+              <span>Bump Alloy to v1.11.0.</span>
+              
+            </li>
+            
+          </ul>
+          
+        </div>
+      </details>
+      
+      
+    </li>
+    
+    <li>
+      
+      
+      <div class="timeline-date" title="2026-09-29">18d ago</div>
+      <details class="release" open>
+        <summary>
+          <span class="release-chevron"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg></span>
+          <span class="badge kind-badge" data-kind="app">App</span>
+          <span class="font-semibold">v1.11.0</span>
+          
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.0" target="_blank" rel="noopener noreferrer">GitHub <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 3h6v6" />
+  <path d="M10 14 21 3" />
+  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+</svg></a>
+          
+        </summary>
+        <div class="release-body">
+          
+          <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Breaking changes</h3>
 <ul>
 <li><code>prometheus.exporter.windows</code>: the <code>msmq</code> collector was removed upstream. (<a href="https://github.com/grafana/alloy/pull/4402" target="_blank" rel="noopener noreferrer nofollow">#4402</a>)</li>
 </ul>
@@ -518,13 +540,19 @@ expression: html
 <h3>Upgrading</h3>
 <pre><code>helm upgrade alloy grafana/alloy --version 1.4.0
 </code></pre></div>
-        
-      </div>
-    </details>
+          
+        </div>
+      </details>
+      
+    </li>
     
-    <details class="release" open>
-      <summary>
-        <span class="release-chevron"><svg
+    <li>
+      
+      
+      <div class="timeline-date" title="2026-09-25">22d ago</div>
+      <details class="release">
+        <summary>
+          <span class="release-chevron"><svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -538,11 +566,11 @@ expression: html
 >
   <path d="m9 18 6-6-6-6" />
 </svg></span>
-        <span class="font-semibold">v1.10.3</span>
-        
-        <span class="text-sm text-muted-foreground" title="2026-09-25">22d ago</span>
-        
-        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.10.3" target="_blank" rel="noopener noreferrer">GitHub <svg
+          <span class="badge kind-badge" data-kind="app">App</span>
+          <span class="font-semibold">v1.10.3</span>
+          
+          
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.10.3" target="_blank" rel="noopener noreferrer">GitHub <svg
   aria-hidden="true"
   xmlns="http://www.w3.org/2000/svg"
   width="24"
@@ -558,19 +586,25 @@ expression: html
   <path d="M10 14 21 3" />
   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
 </svg></a>
-        
-      </summary>
-      <div class="release-body">
-        
-        <p class="text-sm text-muted-foreground">Published without notes.</p>
-        
-      </div>
-    </details>
+          
+        </summary>
+        <div class="release-body">
+          
+          <p class="text-sm text-muted-foreground">Published without notes.</p>
+          
+        </div>
+      </details>
+      
+    </li>
     
-  </div>
-  
+  </ol>
 
-  <p class="text-xs text-muted-foreground">Fetched 4h ago. Pre-releases are left out.</p>
+  <p class="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+    <span>Fetched 4h ago. App pre-releases are left out.</span>
+    <a class="underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/alloy/compare/v1.10.2...v1.11.2" target="_blank" rel="noopener noreferrer">Full app diff</a>
+  </p>
+</div>
+  
 </div>
 
   </main>

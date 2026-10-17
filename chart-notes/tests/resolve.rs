@@ -60,6 +60,16 @@ impl Sources for Fake {
         Ok(cached(self.hub.get(chart).cloned().unwrap_or_default()))
     }
 
+    async fn values(
+        &self,
+        _: &Url,
+        _: &str,
+        _: &str,
+        _: &str,
+    ) -> Result<Cached<chart_notes::sources::ChartValues>, UpstreamError> {
+        Ok(cached(chart_notes::sources::ChartValues::default()))
+    }
+
     async fn releases(&self, _: &str) -> Result<Cached<Releases>, UpstreamError> {
         Ok(cached(Releases::new(Vec::new())))
     }
@@ -136,7 +146,7 @@ async fn source_on_github_pages_needs_no_artifact_hub() {
         .await
         .unwrap();
     let f = found(&res);
-    assert_eq!(f.repo.as_str(), "https://grafana.github.io/helm-charts/");
+    assert_eq!(f.repo.as_str(), "https://grafana.github.io/helm-charts");
     assert_eq!(f.app.as_deref(), Some("grafana/alloy"));
     assert_eq!(f.source.as_deref(), Some("grafana/helm-charts"));
 }

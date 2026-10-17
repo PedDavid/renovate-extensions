@@ -80,6 +80,23 @@ pub fn compare_url(app: &str, old: &str, new: &str, releases: &[Release]) -> Str
     )
 }
 
+/// GitHub's rendering of release notes, reduced to what is safe to embed:
+/// no scripts, styles, forms or event handlers, only http(s) and mailto
+/// links (opening in a new tab), relative links resolved against `base`
+/// (the release's page). None when nothing is left to show.
+pub fn sanitize(html: &str, base: &str) -> Option<String> {
+    let base = url::Url::parse(base).ok()?;
+    let clean = ammonia::Builder::default()
+        .url_schemes(["http", "https", "mailto"].into())
+        .url_relative(ammonia::UrlRelative::RewriteWithBase(base))
+        .link_rel(Some("noopener noreferrer nofollow"))
+        .set_tag_attribute_value("a", "target", "_blank")
+        .clean(html)
+        .to_string();
+    let clean = clean.trim();
+    (!clean.is_empty()).then(|| clean.to_string())
+}
+
 /// Tags can hold `/` and `+`; the compare URL needs them escaped.
 fn encode(tag: &str) -> String {
     tag.chars()
@@ -161,6 +178,30 @@ mod tests {
     fn duplicate_tags_are_listed_once() {
         let releases = vec![release("1.2.3", false), release("v1.2.3", false)];
         assert_eq!(releases_between(&releases, "1.2.2", "1.2.3").len(), 1);
+    }
+
+    #[test]
+    fn notes_are_sanitized() {
+        let base = "https://github.com/x/y/releases/tag/v1.0.0";
+        let html = sanitize(
+            r#"<h2>Fixes</h2><script>alert(1)</script><p onclick="x()">Fixed <a href="/x/y/pull/1">#1</a>
+               and <a href="javascript:alert(1)">this</a>.</p><img src="https://github.com/a.png" onerror="x()">"#,
+            base,
+        )
+        .unwrap();
+        assert!(html.contains("<h2>Fixes</h2>"));
+        assert!(!html.contains("script") && !html.contains("onclick") && !html.contains("onerror"));
+        assert!(
+            html.contains(r#"href="https://github.com/x/y/pull/1""#),
+            "{html}"
+        );
+        assert!(html.contains(r#"target="_blank""#));
+        assert!(!html.contains("javascript"));
+        assert!(
+            html.contains(r#"<img src="https://github.com/a.png">"#),
+            "{html}"
+        );
+        assert_eq!(sanitize("  <script>x</script> ", base), None);
     }
 
     #[test]

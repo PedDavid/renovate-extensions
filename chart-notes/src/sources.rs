@@ -103,10 +103,37 @@ impl Releases {
     }
 }
 
+/// One release's notes, as GitHub renders them, sanitized.
+#[derive(Debug, Default)]
+pub struct ReleaseNotes {
+    /// None when the release has no notes.
+    pub html: Option<String>,
+    etag: Option<String>,
+}
+
+impl ReleaseNotes {
+    /// Sanitizes `html`, resolving relative links against `base`.
+    pub fn new(html: Option<&str>, base: &str) -> Self {
+        ReleaseNotes {
+            html: html.and_then(|h| crate::notes::sanitize(h, base)),
+            etag: None,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct RawNotes {
+    #[serde(default)]
+    body_html: Option<String>,
+    html_url: String,
+}
+
 #[async_trait]
 pub trait Sources: Send + Sync {
     async fn index(&self, chart: &Chart) -> Result<Cached<HelmIndex>, UpstreamError>;
     async fn releases(&self, app: &str) -> Result<Cached<Releases>, UpstreamError>;
+    /// The notes of the release tagged `tag`.
+    async fn notes(&self, app: &str, tag: &str) -> Result<Cached<ReleaseNotes>, UpstreamError>;
 }
 
 /// The real thing, over HTTP, cached.
@@ -116,6 +143,7 @@ pub struct HttpSources {
     github_token: Option<String>,
     indexes: Cache<HelmIndex>,
     releases: Cache<Releases>,
+    notes: Cache<ReleaseNotes>,
     metrics: Arc<Metrics>,
 }
 
@@ -137,6 +165,8 @@ impl HttpSources {
             github_token: github_token.filter(|t| !t.trim().is_empty()),
             indexes: Cache::new(ttl),
             releases: Cache::new(ttl),
+            // One entry per release looked at: drop the ones nobody reads.
+            notes: Cache::new(ttl).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
             metrics,
         })
     }
@@ -236,12 +266,9 @@ impl HttpSources {
         Ok(HelmIndex { charts, etag })
     }
 
-    fn github_headers(&self) -> HeaderMap {
+    fn github_headers(&self, accept: &'static str) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        headers.insert(
-            header::ACCEPT,
-            HeaderValue::from_static("application/vnd.github+json"),
-        );
+        headers.insert(header::ACCEPT, HeaderValue::from_static(accept));
         headers.insert(
             "x-github-api-version",
             HeaderValue::from_static("2022-11-28"),
@@ -271,7 +298,7 @@ impl HttpSources {
                     message: e.to_string(),
                 })?
                 .to_string();
-            let mut headers = self.github_headers();
+            let mut headers = self.github_headers("application/vnd.github+json");
             // Conditional requests that come back 304 don't count against
             // the rate limit. Only the first page is asked: when it hasn't
             // changed, no release was added or edited lately.
@@ -308,6 +335,55 @@ impl HttpSources {
             etag: first_etag,
         })
     }
+
+    async fn fetch_notes(
+        &self,
+        app: &str,
+        tag: &str,
+        previous: Option<Arc<ReleaseNotes>>,
+    ) -> Result<ReleaseNotes, UpstreamError> {
+        let mut url = self
+            .github_api
+            .join(&format!("repos/{app}/releases/tags/"))
+            .map_err(|e| UpstreamError::Request {
+                url: app.to_string(),
+                message: e.to_string(),
+            })?;
+        // Tags can hold `/`: one path segment, encoded.
+        url.path_segments_mut()
+            .map_err(|_| UpstreamError::Request {
+                url: app.to_string(),
+                message: "GitHub API URL cannot have a path".into(),
+            })?
+            .pop_if_empty()
+            .push(tag);
+        let url = url.to_string();
+        // GitHub renders the notes (links to issues, mentions, commits).
+        let mut headers = self.github_headers("application/vnd.github.html+json");
+        if let Some(etag) = previous.as_ref().and_then(|p| p.etag.as_deref())
+            && let Ok(v) = HeaderValue::from_str(etag)
+        {
+            headers.insert(header::IF_NONE_MATCH, v);
+        }
+        let res = self.send("github", &url, headers).await?;
+        if res.status() == StatusCode::NOT_MODIFIED
+            && let Some(previous) = previous
+        {
+            return Ok(ReleaseNotes {
+                html: previous.html.clone(),
+                etag: previous.etag.clone(),
+            });
+        }
+        let etag = etag(res.headers());
+        let raw: RawNotes = res.json().await.map_err(|e| UpstreamError::Parse {
+            url: url.clone(),
+            message: error_chain(&e),
+        })?;
+        Ok(ReleaseNotes {
+            etag,
+            ..ReleaseNotes::new(raw.body_html.as_deref(), &raw.html_url)
+        })
+    }
 }
 
 #[async_trait]
@@ -322,6 +398,14 @@ impl Sources for HttpSources {
     async fn releases(&self, app: &str) -> Result<Cached<Releases>, UpstreamError> {
         self.releases
             .get(app, |previous| self.fetch_releases(app, previous))
+            .await
+    }
+
+    async fn notes(&self, app: &str, tag: &str) -> Result<Cached<ReleaseNotes>, UpstreamError> {
+        self.notes
+            .get(&format!("{app}@{tag}"), |previous| {
+                self.fetch_notes(app, tag, previous)
+            })
             .await
     }
 }

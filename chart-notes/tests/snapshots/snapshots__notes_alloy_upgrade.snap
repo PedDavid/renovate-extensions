@@ -180,11 +180,30 @@ expression: html
 </svg></span>
         <span class="tabular-nums">1.4.0</span>
       </h1>
-      <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-  <span>App <a class="underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/alloy" target="_blank" rel="noopener noreferrer">grafana/alloy</a></span>
-  <span aria-hidden="true">·</span>
-  <span>Chart from <code class="text-xs">grafana.github.io</code></span>
-</div>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="https://github.com/grafana/alloy" target="_blank" rel="noopener noreferrer">grafana/alloy</a>
+        <code title="appVersion of alloy 1.3.0, released 2026-09-10">v1.10.2</code>
+        <span class="text-muted-foreground [&>svg]:size-3.5" aria-label="to"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg></span>
+        <code title="appVersion of alloy 1.4.0, released 2026-10-08">v1.11.2</code>
+        <span class="badge">upgrade</span>
+        
+        <span class="text-muted-foreground" aria-hidden="true">·</span>
+        <span class="text-muted-foreground">Chart from <code class="text-xs">grafana.github.io</code></span>
+      </div>
     </div>
     
     <a class="btn" data-variant="outline" href="https://github.com/grafana/alloy/compare/v1.10.2...v1.11.2" target="_blank" rel="noopener noreferrer">
@@ -211,87 +230,214 @@ expression: html
 
   
 
-  <div class="card">
-    <header>
-      <h2>App version</h2>
-      <p>What each chart version declares as its <code>appVersion</code>.</p>
-    </header>
-    <section>
-      <dl class="kv">
-        <dt>1.3.0</dt>
-        <dd><code>v1.10.2</code> <span class="text-muted-foreground">· chart released 2026-09-10</span></dd>
-        <dt>1.4.0</dt>
-        <dd><code>v1.11.2</code> <span class="text-muted-foreground">· chart released 2026-10-08</span></dd>
-        <dt>Change</dt>
-        <dd>
-          <span class="badge">upgrade</span>
-          
-        </dd>
-      </dl>
-    </section>
-  </div>
-
   
 
   
   <div class="flex flex-col gap-3">
     <h2 class="text-lg font-semibold">
-      Releases
-      <span class="text-muted-foreground font-normal">· 4</span>
+      Release notes
+      <span class="text-muted-foreground font-normal">· 4 releases</span>
     </h2>
-    <div class="table-container rounded-lg border">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Release</th>
-            <th class="hidden sm:table-cell">Published</th>
-          </tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>
-              
-              <a href="https://github.com/grafana/alloy/releases/tag/v1.11.2" class="font-medium hover:underline" target="_blank" rel="noopener noreferrer">v1.11.2</a>
-              
-              
-            </td>
-            <td class="hidden sm:table-cell text-muted-foreground"><span title="2026-10-07">10d ago</span></td>
-          </tr>
-          
-          <tr>
-            <td>
-              
-              <a href="https://github.com/grafana/alloy/releases/tag/v1.11.1" class="font-medium hover:underline" target="_blank" rel="noopener noreferrer">v1.11.1</a>
-              
-              
-            </td>
-            <td class="hidden sm:table-cell text-muted-foreground"><span title="2026-10-02">15d ago</span></td>
-          </tr>
-          
-          <tr>
-            <td>
-              
-              <a href="https://github.com/grafana/alloy/releases/tag/v1.11.0" class="font-medium hover:underline" target="_blank" rel="noopener noreferrer">v1.11.0</a>
-              
-              
-            </td>
-            <td class="hidden sm:table-cell text-muted-foreground"><span title="2026-09-29">18d ago</span></td>
-          </tr>
-          
-          <tr>
-            <td>
-              
-              <a href="https://github.com/grafana/alloy/releases/tag/v1.10.3" class="font-medium hover:underline" target="_blank" rel="noopener noreferrer">v1.10.3</a>
-              
-              
-            </td>
-            <td class="hidden sm:table-cell text-muted-foreground"><span title="2026-09-25">22d ago</span></td>
-          </tr>
-          
-        </tbody>
-      </table>
-    </div>
+    
+    
+    <details class="release" open>
+      <summary>
+        <span class="release-chevron"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg></span>
+        <span class="font-semibold">v1.11.2</span>
+        
+        <span class="text-sm text-muted-foreground" title="2026-10-07">10d ago</span>
+        
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.2" target="_blank" rel="noopener noreferrer">GitHub <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 3h6v6" />
+  <path d="M10 14 21 3" />
+  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+</svg></a>
+        
+      </summary>
+      <div class="release-body">
+        
+        <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Bugfixes</h3>
+<ul>
+<li>Fix <code>loki.source.file</code> missing lines after a log rotation. (<a href="https://github.com/grafana/alloy/pull/4501" target="_blank" rel="noopener noreferrer nofollow">#4501</a>)</li>
+<li>Fix a panic in <code>otelcol.processor.transform</code> on empty statements. (<a href="https://github.com/grafana/alloy/pull/4498" target="_blank" rel="noopener noreferrer nofollow">#4498</a>)</li>
+</ul></div>
+        
+      </div>
+    </details>
+    
+    <details class="release" open>
+      <summary>
+        <span class="release-chevron"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg></span>
+        <span class="font-semibold">v1.11.1</span>
+        
+        <span class="text-sm text-muted-foreground" title="2026-10-02">15d ago</span>
+        
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.1" target="_blank" rel="noopener noreferrer">GitHub <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 3h6v6" />
+  <path d="M10 14 21 3" />
+  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+</svg></a>
+        
+      </summary>
+      <div class="release-body">
+        
+        <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Bugfixes</h3>
+<ul>
+<li>Restore the <code>--stability.level</code> flag's default. (<a href="https://github.com/grafana/alloy/pull/4470" target="_blank" rel="noopener noreferrer nofollow">#4470</a>)</li>
+</ul></div>
+        
+      </div>
+    </details>
+    
+    <details class="release" open>
+      <summary>
+        <span class="release-chevron"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg></span>
+        <span class="font-semibold">v1.11.0</span>
+        
+        <span class="text-sm text-muted-foreground" title="2026-09-29">18d ago</span>
+        
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.11.0" target="_blank" rel="noopener noreferrer">GitHub <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 3h6v6" />
+  <path d="M10 14 21 3" />
+  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+</svg></a>
+        
+      </summary>
+      <div class="release-body">
+        
+        <div class="prose prose-sm dark:prose-invert max-w-none"><h3>Breaking changes</h3>
+<ul>
+<li><code>prometheus.exporter.windows</code>: the <code>msmq</code> collector was removed upstream. (<a href="https://github.com/grafana/alloy/pull/4402" target="_blank" rel="noopener noreferrer nofollow">#4402</a>)</li>
+</ul>
+<h3>Features</h3>
+<ul>
+<li>Add <code>otelcol.receiver.tcplog</code>. (<a href="https://github.com/grafana/alloy/pull/4388" target="_blank" rel="noopener noreferrer nofollow">#4388</a>)</li>
+<li><code>loki.write</code> can now retry on 429 responses with backoff.</li>
+</ul>
+<h3>Upgrading</h3>
+<pre><code>helm upgrade alloy grafana/alloy --version 1.4.0
+</code></pre></div>
+        
+      </div>
+    </details>
+    
+    <details class="release" open>
+      <summary>
+        <span class="release-chevron"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m9 18 6-6-6-6" />
+</svg></span>
+        <span class="font-semibold">v1.10.3</span>
+        
+        <span class="text-sm text-muted-foreground" title="2026-09-25">22d ago</span>
+        
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="https://github.com/grafana/alloy/releases/tag/v1.10.3" target="_blank" rel="noopener noreferrer">GitHub <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M15 3h6v6" />
+  <path d="M10 14 21 3" />
+  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+</svg></a>
+        
+      </summary>
+      <div class="release-body">
+        
+        <p class="text-sm text-muted-foreground">Published without notes.</p>
+        
+      </div>
+    </details>
+    
   </div>
   
 

@@ -13,7 +13,18 @@
         <span class="text-muted-foreground [&>svg]:size-5" aria-label="to">{% include "icons/arrow-right.svg" %}</span>
         <span class="tabular-nums">{{ to }}</span>
       </h1>
-      {% include "partials/chart_meta.html" %}
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="{{ chart.app_url }}" target="_blank" rel="noopener noreferrer">{{ chart.app }}</a>
+        <code title="appVersion of {{ chart.name }} {{ from }}{% if !from_date.is_empty() %}, released {{ from_date }}{% endif %}">{{ old_app }}</code>
+        <span class="text-muted-foreground [&>svg]:size-3.5" aria-label="to">{% include "icons/arrow-right.svg" %}</span>
+        <code title="appVersion of {{ chart.name }} {{ to }}{% if !to_date.is_empty() %}, released {{ to_date }}{% endif %}">{{ new_app }}</code>
+        {% if direction == "same" %}<span class="badge" data-variant="secondary">same app version</span>
+        {% else if direction == "upgrade" %}<span class="badge">upgrade</span>
+        {% else if direction == "downgrade" %}<span class="badge" data-variant="destructive">downgrade</span>
+        {% else %}<span class="badge" data-variant="outline">not semver</span>{% endif %}
+        <span class="text-muted-foreground" aria-hidden="true">·</span>
+        <span class="text-muted-foreground">Chart from <code class="text-xs">{{ chart.repo_host }}</code></span>
+      </div>
     </div>
     {% if direction != "same" %}
     <a class="btn" data-variant="outline" href="{{ compare_url }}" target="_blank" rel="noopener noreferrer">
@@ -23,28 +34,6 @@
   </div>
 
   {% include "partials/chart_note.html" %}
-
-  <div class="card">
-    <header>
-      <h2>App version</h2>
-      <p>What each chart version declares as its <code>appVersion</code>.</p>
-    </header>
-    <section>
-      <dl class="kv">
-        <dt>{{ from }}</dt>
-        <dd><code>{{ old_app }}</code>{% if !from_date.is_empty() %} <span class="text-muted-foreground">· chart released {{ from_date }}</span>{% endif %}</dd>
-        <dt>{{ to }}</dt>
-        <dd><code>{{ new_app }}</code>{% if !to_date.is_empty() %} <span class="text-muted-foreground">· chart released {{ to_date }}</span>{% endif %}</dd>
-        <dt>Change</dt>
-        <dd>
-          {% if direction == "same" %}<span class="badge" data-variant="secondary">same app version</span>
-          {% else if direction == "upgrade" %}<span class="badge">upgrade</span>
-          {% else if direction == "downgrade" %}<span class="badge" data-variant="destructive">downgrade</span>
-          {% else %}<span class="badge" data-variant="outline">not semver</span>{% endif %}
-        </dd>
-      </dl>
-    </section>
-  </div>
 
   {% for s in stale %}
   <div class="alert" role="status">
@@ -85,34 +74,40 @@
   {% else %}
   <div class="flex flex-col gap-3">
     <h2 class="text-lg font-semibold">
-      {% if direction == "downgrade" %}Rolled back{% else %}Releases{% endif %}
-      <span class="text-muted-foreground font-normal">· {{ releases.len() }}</span>
+      {% if direction == "downgrade" %}Rolled back{% else %}Release notes{% endif %}
+      <span class="text-muted-foreground font-normal">· {{ releases.len() }} {% if releases.len() == 1 %}release{% else %}releases{% endif %}</span>
     </h2>
-    <div class="table-container rounded-lg border">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Release</th>
-            <th class="hidden sm:table-cell">Published</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in releases %}
-          <tr>
-            <td>
-              {% if let Some(url) = r.url %}
-              <a href="{{ url }}" class="font-medium hover:underline" target="_blank" rel="noopener noreferrer">{{ r.title }}</a>
-              {% else %}
-              <span class="font-medium">{{ r.title }}</span>
-              {% endif %}
-              {% if r.titled() %}<code class="ms-1 text-xs text-muted-foreground">{{ r.tag }}</code>{% endif %}
-            </td>
-            <td class="hidden sm:table-cell text-muted-foreground">{% if !r.published_date.is_empty() %}<span title="{{ r.published_date }}">{{ r.published_rel }}</span>{% endif %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    {% if !notes_error.is_empty() %}
+    <div class="alert" data-variant="destructive" role="alert">
+      {% include "icons/triangle-alert.svg" %}
+      <h2>Some notes couldn't be loaded</h2>
+      <section><p>{{ notes_error }}</p></section>
     </div>
+    {% endif %}
+    {% for r in releases %}
+    <details class="release"{% if loop.index <= 5 %} open{% endif %}>
+      <summary>
+        <span class="release-chevron">{% include "icons/chevron-right.svg" %}</span>
+        <span class="font-semibold">{{ r.title }}</span>
+        {% if r.titled() %}<code class="text-xs text-muted-foreground">{{ r.tag }}</code>{% endif %}
+        {% if !r.published_date.is_empty() %}<span class="text-sm text-muted-foreground" title="{{ r.published_date }}">{{ r.published_rel }}</span>{% endif %}
+        {% if let Some(url) = r.url %}
+        <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="{{ url }}" target="_blank" rel="noopener noreferrer">GitHub {% include "icons/external-link.svg" %}</a>
+        {% endif %}
+      </summary>
+      <div class="release-body">
+        {% if r.notes == "shown" %}
+        <div class="prose prose-sm dark:prose-invert max-w-none">{{ r.notes_html|safe }}</div>
+        {% else if r.notes == "empty" %}
+        <p class="text-sm text-muted-foreground">Published without notes.</p>
+        {% else if r.notes == "failed" %}
+        <p class="text-sm text-muted-foreground">Couldn't load these notes. They're on the release's GitHub page.</p>
+        {% else %}
+        <p class="text-sm text-muted-foreground">Only the newest releases' notes are shown here. These are on the release's GitHub page.</p>
+        {% endif %}
+      </div>
+    </details>
+    {% endfor %}
   </div>
   {% endif %}
 

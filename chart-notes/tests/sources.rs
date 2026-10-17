@@ -239,3 +239,55 @@ async fn missing_repository_is_a_status_error() {
         "{err}"
     );
 }
+
+#[tokio::test]
+async fn release_notes_are_rendered_by_github_and_sanitized() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        // A tag with a `/` stays one path segment.
+        .and(path("/repos/grafana/loki/releases/tags/helm-loki%2F6.0.0"))
+        .and(header("accept", "application/vnd.github.html+json"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("etag", "\"n1\"")
+                .set_body_json(json!({
+                    "html_url": "https://github.com/grafana/loki/releases/tag/helm-loki/6.0.0",
+                    "body_html": "<p>Fixed <a href=\"/grafana/loki/pull/1\">#1</a><script>x()</script></p>",
+                })),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+    let (sources, _) = sources(&server, None, Duration::from_secs(60));
+    let notes = sources
+        .notes("grafana/loki", "helm-loki/6.0.0")
+        .await
+        .unwrap();
+    let html = notes.value.html.as_deref().unwrap();
+    assert!(
+        html.contains(r#"href="https://github.com/grafana/loki/pull/1""#),
+        "{html}"
+    );
+    assert!(!html.contains("script"));
+    // Cached: the mock expects a single request.
+    sources
+        .notes("grafana/loki", "helm-loki/6.0.0")
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn release_without_notes() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/repos/grafana/alloy/releases/tags/v1.0.0"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "html_url": "https://github.com/grafana/alloy/releases/tag/v1.0.0",
+            "body_html": null,
+        })))
+        .mount(&server)
+        .await;
+    let (sources, _) = sources(&server, None, Duration::from_secs(60));
+    let notes = sources.notes("grafana/alloy", "v1.0.0").await.unwrap();
+    assert!(notes.value.html.is_none());
+}

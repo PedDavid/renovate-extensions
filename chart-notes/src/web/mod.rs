@@ -202,7 +202,9 @@ async fn asset(Path(path): Path<String>) -> Response {
     }
 }
 
-const CSP: &str = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; \
+/// Images in release notes are served from GitHub; nothing else is remote.
+const CSP: &str = "default-src 'self'; script-src 'self'; style-src 'self'; \
+img-src 'self' data: https://github.com https://*.githubusercontent.com; \
 connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 
 /// Security headers on every response; `no-store` on everything but assets.

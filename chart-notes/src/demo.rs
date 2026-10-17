@@ -8,7 +8,9 @@ use jiff::Timestamp;
 
 use crate::cache::Cached;
 use crate::charts::{self, Chart, Charts};
-use crate::sources::{ChartVersion, HelmIndex, Release, Releases, Sources, UpstreamError};
+use crate::sources::{
+    ChartVersion, HelmIndex, Release, ReleaseNotes, Releases, Sources, UpstreamError,
+};
 
 pub fn charts() -> Charts {
     charts::parse(
@@ -114,6 +116,46 @@ fn releases(app: &str) -> Option<Releases> {
     ))
 }
 
+/// Release notes as GitHub renders them (before sanitizing).
+fn notes_html(app: &str, tag: &str) -> Option<&'static str> {
+    Some(match (app, tag) {
+        ("grafana/alloy", "v1.11.2") => {
+            r#"<h3>Bugfixes</h3>
+<ul>
+<li>Fix <code>loki.source.file</code> missing lines after a log rotation. (<a href="https://github.com/grafana/alloy/pull/4501">#4501</a>)</li>
+<li>Fix a panic in <code>otelcol.processor.transform</code> on empty statements. (<a href="https://github.com/grafana/alloy/pull/4498">#4498</a>)</li>
+</ul>"#
+        }
+        ("grafana/alloy", "v1.11.1") => {
+            r#"<h3>Bugfixes</h3>
+<ul>
+<li>Restore the <code>--stability.level</code> flag's default. (<a href="https://github.com/grafana/alloy/pull/4470">#4470</a>)</li>
+</ul>"#
+        }
+        ("grafana/alloy", "v1.11.0") => {
+            r#"<h3>Breaking changes</h3>
+<ul>
+<li><code>prometheus.exporter.windows</code>: the <code>msmq</code> collector was removed upstream. (<a href="https://github.com/grafana/alloy/pull/4402">#4402</a>)</li>
+</ul>
+<h3>Features</h3>
+<ul>
+<li>Add <code>otelcol.receiver.tcplog</code>. (<a href="https://github.com/grafana/alloy/pull/4388">#4388</a>)</li>
+<li><code>loki.write</code> can now retry on 429 responses with backoff.</li>
+</ul>
+<h3>Upgrading</h3>
+<pre><code>helm upgrade alloy grafana/alloy --version 1.4.0
+</code></pre>"#
+        }
+        ("prometheus-operator/prometheus-operator", "v0.86.1") => {
+            r#"<ul>
+<li>[BUGFIX] Fix the <code>ScrapeConfig</code> reconciliation when the namespace selector is empty. <a href="https://github.com/prometheus-operator/prometheus-operator/pull/7900">#7900</a></li>
+</ul>"#
+        }
+        // v1.10.3 was published without notes.
+        _ => return None,
+    })
+}
+
 /// When the demo data was "fetched".
 pub fn fetched_at() -> Timestamp {
     ts("2026-10-17T08:00:00Z")
@@ -149,5 +191,14 @@ impl Sources for DemoSources {
                 reset: Some(ts("2026-10-17T09:00:00Z")),
             }),
         }
+    }
+
+    async fn notes(&self, app: &str, tag: &str) -> Result<Cached<ReleaseNotes>, UpstreamError> {
+        let base = format!("https://github.com/{app}/releases/tag/{tag}");
+        Ok(Cached {
+            value: Arc::new(ReleaseNotes::new(notes_html(app, tag), &base)),
+            fetched_at: fetched_at(),
+            stale: None,
+        })
     }
 }

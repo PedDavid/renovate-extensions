@@ -180,11 +180,30 @@ expression: html
 </svg></span>
         <span class="tabular-nums">37.2.0</span>
       </h1>
-      <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-  <span>App <a class="underline underline-offset-4 hover:text-foreground" href="https://github.com/traefik/traefik" target="_blank" rel="noopener noreferrer">traefik/traefik</a></span>
-  <span aria-hidden="true">·</span>
-  <span>Chart from <code class="text-xs">traefik.github.io</code></span>
-</div>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="https://github.com/traefik/traefik" target="_blank" rel="noopener noreferrer">traefik/traefik</a>
+        <code title="appVersion of traefik 37.1.2, released 2026-09-17">v3.5.2</code>
+        <span class="text-muted-foreground [&>svg]:size-3.5" aria-label="to"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" />
+</svg></span>
+        <code title="appVersion of traefik 37.2.0, released 2026-10-01">v3.5.3</code>
+        <span class="badge">upgrade</span>
+        
+        <span class="text-muted-foreground" aria-hidden="true">·</span>
+        <span class="text-muted-foreground">Chart from <code class="text-xs">traefik.github.io</code></span>
+      </div>
     </div>
     
     <a class="btn" data-variant="outline" href="https://github.com/traefik/traefik/compare/v3.5.2...v3.5.3" target="_blank" rel="noopener noreferrer">
@@ -210,26 +229,6 @@ expression: html
   </div>
 
   
-
-  <div class="card">
-    <header>
-      <h2>App version</h2>
-      <p>What each chart version declares as its <code>appVersion</code>.</p>
-    </header>
-    <section>
-      <dl class="kv">
-        <dt>37.1.2</dt>
-        <dd><code>v3.5.2</code> <span class="text-muted-foreground">· chart released 2026-09-17</span></dd>
-        <dt>37.2.0</dt>
-        <dd><code>v3.5.3</code> <span class="text-muted-foreground">· chart released 2026-10-01</span></dd>
-        <dt>Change</dt>
-        <dd>
-          <span class="badge">upgrade</span>
-          
-        </dd>
-      </dl>
-    </section>
-  </div>
 
   
 

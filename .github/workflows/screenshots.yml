@@ -1,0 +1,61 @@
+name: Screenshots
+
+# Renders new screenshot baselines on the same runner as CI's visual job and
+# commits them: label a PR `update-screenshots`, or run this workflow on a
+# branch. Review the images in the resulting commit like any other change.
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: screenshots-${{ github.event.pull_request.head.ref || github.ref }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  update:
+    # Forks get a read-only token, so only branches of this repository.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'update-screenshots' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    # The same runner image as CI's visual job: the baselines are its pixels.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          # Commits pushed with GITHUB_TOKEN don't start CI. A token in this
+          # secret (contents: write on this repository) makes them do so.
+          token: ${{ secrets.SCREENSHOTS_TOKEN || github.token }}
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install Chromium for the pinned Playwright driver
+        run: cargo run --locked --package chart-notes --example install-browsers -- chromium --with-deps
+      - name: Render the baselines
+        run: make visual-update
+      - name: Check them
+        run: make visual
+      - name: Commit them
+        run: |
+          git add chart-notes/tests/screenshots/
+          if git diff --cached --quiet; then
+            echo "The baselines are already up to date"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "chart-notes: Update screenshot baselines" \
+                     -m "Rendered by the Screenshots workflow on ubuntu-24.04."
+          git push
+      - name: Remove the label
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label update-screenshots

@@ -48,20 +48,20 @@ async fn versions() {
 
 #[tokio::test]
 async fn notes_upgrade() {
-    let html = render("/alloy?from=1.3.0&to=1.4.0", &[], StatusCode::OK).await;
+    let html = render("/alloy?from=1.3.0&to=1.4.0&full=1", &[], StatusCode::OK).await;
     assert_html("notes_alloy_upgrade", html);
 }
 
 #[tokio::test]
 async fn notes_same_app_version() {
-    let html = render("/alloy?from=1.2.0&to=1.2.1", &[], StatusCode::OK).await;
+    let html = render("/alloy?from=1.2.0&to=1.2.1&full=1", &[], StatusCode::OK).await;
     assert_html("notes_alloy_same", html);
 }
 
 #[tokio::test]
 async fn notes_with_note() {
     let html = render(
-        "/kube-prometheus-stack?from=78.5.0&to=79.1.0",
+        "/kube-prometheus-stack?from=78.5.0&to=79.1.0&full=1",
         &[],
         StatusCode::OK,
     )
@@ -71,8 +71,31 @@ async fn notes_with_note() {
 
 #[tokio::test]
 async fn notes_github_down() {
-    let html = render("/traefik?from=37.1.2&to=37.2.0", &[], StatusCode::OK).await;
+    let html = render("/traefik?from=37.1.2&to=37.2.0&full=1", &[], StatusCode::OK).await;
     assert_html("notes_traefik_github_down", html);
+}
+
+#[tokio::test]
+async fn notes_shell_loads_its_content() {
+    let html = render("/alloy?from=1.3.0&to=1.4.0", &[], StatusCode::OK).await;
+    assert_html("notes_alloy_shell", html);
+}
+
+#[tokio::test]
+async fn notes_chart_tab() {
+    let html = render(
+        "/alloy?from=1.3.0&to=1.4.0&tab=chart&full=1",
+        &[],
+        StatusCode::OK,
+    )
+    .await;
+    assert_html("notes_alloy_chart_tab", html);
+}
+
+#[tokio::test]
+async fn values_diff_fragment() {
+    let html = render("/alloy/values?from=1.3.0&to=1.4.0", &[], StatusCode::OK).await;
+    assert_html("values_alloy", html);
 }
 
 #[tokio::test]
@@ -84,7 +107,12 @@ async fn search_results() {
 
 #[tokio::test]
 async fn not_found() {
-    let html = render("/alloy?from=1.3.0&to=9.9.9", &[], StatusCode::NOT_FOUND).await;
+    let html = render(
+        "/alloy?from=1.3.0&to=9.9.9&full=1",
+        &[],
+        StatusCode::NOT_FOUND,
+    )
+    .await;
     assert_html("unknown_version", html);
 }
 
@@ -96,6 +124,6 @@ async fn upstream_error() {
 
 #[tokio::test]
 async fn several_repositories() {
-    let html = render("/nginx?from=1.0.0&to=1.1.0", &[], StatusCode::OK).await;
+    let html = render("/nginx?from=1.0.0&to=1.1.0&full=1", &[], StatusCode::OK).await;
     assert_html("ambiguous_nginx", html);
 }

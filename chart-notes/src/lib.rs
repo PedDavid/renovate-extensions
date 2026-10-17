@@ -7,5 +7,6 @@ pub mod overrides;
 pub mod report;
 pub mod resolve;
 pub mod sources;
+pub mod values;
 pub mod version;
 pub mod web;

@@ -3,6 +3,7 @@
 //! are no POST routes, sessions or CSRF tokens.
 
 mod badge;
+mod notes;
 mod pages;
 mod views;
 
@@ -249,6 +250,8 @@ pub fn router(state: AppState) -> Router {
         .route("/assets/{*path}", get(asset))
         .route("/{chart}", get(pages::chart))
         .route("/{chart}/badge.svg", get(badge::badge))
+        .route("/{chart}/timeline", get(notes::timeline))
+        .route("/{chart}/values", get(notes::values))
         .fallback(|| async { AppError::not_found("page not found") })
         .layer(middleware::from_fn(security_headers))
         .layer(TraceLayer::new_for_http().make_span_with(|req: &Request| {

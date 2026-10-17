@@ -86,6 +86,13 @@ impl ChartIndex {
     }
 }
 
+/// A chart version's default `values.yaml`.
+#[derive(Debug, Default)]
+pub struct ChartValues {
+    /// None when the package has no top-level `values.yaml`.
+    pub text: Option<String>,
+}
+
 /// A Helm repository Artifact Hub lists a chart of the searched name in.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Candidate {
@@ -156,6 +163,16 @@ pub trait Sources: Send + Sync {
     async fn index(&self, repo: &Url, chart: &str) -> Result<Cached<ChartIndex>, UpstreamError>;
     /// The Helm repositories Artifact Hub lists a chart named `chart` in.
     async fn search(&self, chart: &str) -> Result<Cached<Vec<Candidate>>, UpstreamError>;
+    /// The default `values.yaml` of `chart` `version` from the repository at
+    /// `repo`, whose index lists its package at `package` (possibly relative
+    /// to the repository).
+    async fn values(
+        &self,
+        repo: &Url,
+        chart: &str,
+        version: &str,
+        package: &str,
+    ) -> Result<Cached<ChartValues>, UpstreamError>;
     async fn releases(&self, app: &str) -> Result<Cached<Releases>, UpstreamError>;
     /// The notes of the release tagged `tag`.
     async fn notes(&self, app: &str, tag: &str) -> Result<Cached<ReleaseNotes>, UpstreamError>;
@@ -169,6 +186,7 @@ pub struct HttpSources {
     artifact_hub: Url,
     indexes: Cache<ChartIndex>,
     searches: Cache<Vec<Candidate>>,
+    values: Cache<ChartValues>,
     releases: Cache<Releases>,
     notes: Cache<ReleaseNotes>,
     metrics: Arc<Metrics>,
@@ -196,6 +214,9 @@ impl HttpSources {
             indexes: Cache::new(ttl).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
             // Which repositories carry a chart changes rarely.
             searches: Cache::new(ttl * 36).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
+            // A published package doesn't change.
+            values: Cache::new(Duration::from_secs(7 * 24 * 3600))
+                .forgetting_after(Duration::from_secs(7 * 24 * 3600)),
             releases: Cache::new(ttl),
             // One entry per release looked at: drop the ones nobody reads.
             notes: Cache::new(ttl).forgetting_after(Duration::from_secs(7 * 24 * 3600)),
@@ -447,6 +468,53 @@ impl HttpSources {
     }
 }
 
+impl HttpSources {
+    async fn fetch_values(&self, repo: &Url, package: &str) -> Result<ChartValues, UpstreamError> {
+        let base = Url::parse(&format!("{}/", repo.as_str().trim_end_matches('/')));
+        let url = base
+            .and_then(|b| b.join(package))
+            .ok()
+            .filter(|u| matches!(u.scheme(), "https" | "http"))
+            .ok_or_else(|| UpstreamError::Request {
+                url: package.to_string(),
+                message: "not an http(s) package URL".into(),
+            })?
+            .to_string();
+        let res = self.send("helm", &url, HeaderMap::new()).await?;
+        let too_big = || UpstreamError::Parse {
+            url: url.clone(),
+            message: format!(
+                "the package is over {} MB",
+                crate::values::MAX_PACKAGE >> 20
+            ),
+        };
+        if res
+            .content_length()
+            .is_some_and(|n| n > crate::values::MAX_PACKAGE as u64)
+        {
+            return Err(too_big());
+        }
+        let body = res.bytes().await.map_err(|e| UpstreamError::Request {
+            url: url.clone(),
+            message: error_chain(&e),
+        })?;
+        if body.len() > crate::values::MAX_PACKAGE {
+            return Err(too_big());
+        }
+        let text = tokio::task::spawn_blocking(move || crate::values::extract(&body))
+            .await
+            .map_err(|e| UpstreamError::Parse {
+                url: url.clone(),
+                message: e.to_string(),
+            })?
+            .map_err(|e| UpstreamError::Parse {
+                url: url.clone(),
+                message: e.to_string(),
+            })?;
+        Ok(ChartValues { text })
+    }
+}
+
 #[derive(Deserialize)]
 struct RawSearch {
     #[serde(default)]
@@ -511,6 +579,20 @@ impl Sources for HttpSources {
 
     async fn search(&self, chart: &str) -> Result<Cached<Vec<Candidate>>, UpstreamError> {
         self.searches.get(chart, |_| self.fetch_search(chart)).await
+    }
+
+    async fn values(
+        &self,
+        repo: &Url,
+        chart: &str,
+        version: &str,
+        package: &str,
+    ) -> Result<Cached<ChartValues>, UpstreamError> {
+        self.values
+            .get(&format!("{}#{chart}@{version}", index_url(repo)), |_| {
+                self.fetch_values(repo, package)
+            })
+            .await
     }
 
     async fn releases(&self, app: &str) -> Result<Cached<Releases>, UpstreamError> {

@@ -286,7 +286,7 @@ fn pages_url(repo: &str) -> Option<Url> {
     if !valid_repo(repo) || owner.contains('.') {
         return None;
     }
-    Url::parse(&format!("https://{owner}.github.io/{name}/")).ok()
+    Url::parse(&format!("https://{owner}.github.io/{name}")).ok()
 }
 
 fn same_url(a: &Url, b: &Url) -> bool {
@@ -436,7 +436,7 @@ mod tests {
     fn pages_urls_are_github_io_only() {
         assert_eq!(
             pages_url("grafana/helm-charts").unwrap().as_str(),
-            "https://grafana.github.io/helm-charts/"
+            "https://grafana.github.io/helm-charts"
         );
         assert_eq!(pages_url("evil.example/x"), None);
         assert_eq!(pages_url("../x"), None);

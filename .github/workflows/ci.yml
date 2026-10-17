@@ -4,12 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:
-    inputs:
-      update-screenshots:
-        description: Render new screenshot baselines (download them from the run's artifact)
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -40,13 +34,11 @@ jobs:
       - name: Install Chromium for the pinned Playwright driver
         run: cargo run --locked --package chart-notes --example install-browsers -- chromium --with-deps
       - name: Browser tests (palette and screenshots)
-        if: ${{ !inputs.update-screenshots }}
         run: make visual
-      - name: Render new baselines
-        if: ${{ inputs.update-screenshots }}
-        run: make visual-update
+      # On failure: each -actual.png and -diff.png. New baselines come from
+      # the Screenshots workflow (label the PR update-screenshots).
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: ${{ always() }}
+        if: ${{ failure() }}
         with:
           name: screenshots
           path: chart-notes/tests/screenshots/

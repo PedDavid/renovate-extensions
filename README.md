@@ -156,10 +156,18 @@ The pages are checked three ways:
   with a search still in flight never follows a stale result.
 
 Fonts and antialiasing vary between machines, so the screenshot baselines are
-the ones CI's `visual` job renders on `ubuntu-24.04`. When that job fails, its
-`screenshots` artifact has each `-actual.png` and `-diff.png`. Running the CI
-workflow by hand with *update screenshots* ticked returns a full new set to
-commit into `chart-notes/tests/screenshots/`.
+rendered on `ubuntu-24.04`, the runner CI's `visual` job uses. When that job
+fails, its `screenshots` artifact has each `-actual.png` and `-diff.png`. When
+the change is intended, label the PR `update-screenshots`. The Screenshots
+workflow then renders a new set, checks it and commits it to the PR's branch,
+where the images can be reviewed in the diff. Running that workflow by hand
+does the same on any branch.
+
+Commits pushed with the workflow's own token don't start CI, so the checks
+don't re-run on the baseline commit until the next push. To have them re-run
+straight away, store a token that can push to this repository
+(a fine-grained token with *Contents: read and write*) as the
+`SCREENSHOTS_TOKEN` Actions secret.
 
 WCAG contrast of every colour palette is checked from the CSS
 (`tests/contrast.rs`).

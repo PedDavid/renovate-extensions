@@ -38,6 +38,8 @@ type Slot<V> = Arc<tokio::sync::Mutex<Option<Entry<V>>>>;
 
 pub struct Cache<V> {
     ttl: Duration,
+    /// Entries not asked for this long after they expire are dropped.
+    forget_after: Option<Duration>,
     slots: Mutex<HashMap<String, Slot<V>>>,
 }
 
@@ -45,8 +47,37 @@ impl<V> Cache<V> {
     pub fn new(ttl: Duration) -> Self {
         Cache {
             ttl,
+            forget_after: None,
             slots: Mutex::new(HashMap::new()),
         }
+    }
+
+    /// For open-ended keys: entries left unused for `after` past their
+    /// expiry are dropped, so the cache doesn't grow forever.
+    pub fn forgetting_after(mut self, after: Duration) -> Self {
+        self.forget_after = Some(after);
+        self
+    }
+
+    /// Drops entries that expired more than `forget_after` ago. Slots in
+    /// use (locked) are kept.
+    fn forget_old(&self, slots: &mut HashMap<String, Slot<V>>) {
+        let Some(after) = self.forget_after else {
+            return;
+        };
+        let now = Instant::now();
+        slots.retain(|_, slot| match slot.try_lock() {
+            Ok(entry) => entry.as_ref().is_some_and(|e| e.expires + after > now),
+            Err(_) => true,
+        });
+    }
+
+    pub fn len(&self) -> usize {
+        self.slots.lock().expect("cache lock poisoned").len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// The value for `key`, fetched when missing or expired. `fetch` gets the
@@ -57,13 +88,13 @@ impl<V> Cache<V> {
         F: FnOnce(Option<Arc<V>>) -> Fut,
         Fut: Future<Output = Result<V, E>>,
     {
-        let slot = self
-            .slots
-            .lock()
-            .expect("cache lock poisoned")
-            .entry(key.to_string())
-            .or_default()
-            .clone();
+        let slot = {
+            let mut slots = self.slots.lock().expect("cache lock poisoned");
+            if !slots.contains_key(key) {
+                self.forget_old(&mut slots);
+            }
+            slots.entry(key.to_string()).or_default().clone()
+        };
         let mut entry = slot.lock().await;
         if let Some(e) = entry.as_ref()
             && e.expires > Instant::now()
@@ -150,6 +181,29 @@ mod tests {
             t.await.unwrap();
         }
         assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn forgets_entries_long_unused() {
+        let cache = Cache::new(Duration::ZERO).forgetting_after(Duration::ZERO);
+        cache
+            .get("a", |_| async { Ok::<_, String>(1) })
+            .await
+            .unwrap();
+        cache
+            .get("b", |_| async { Ok::<_, String>(2) })
+            .await
+            .unwrap();
+        // Adding "b" swept "a", which had expired.
+        assert_eq!(cache.len(), 1);
+        let kept = Cache::new(Duration::from_secs(60)).forgetting_after(Duration::ZERO);
+        kept.get("a", |_| async { Ok::<_, String>(1) })
+            .await
+            .unwrap();
+        kept.get("b", |_| async { Ok::<_, String>(2) })
+            .await
+            .unwrap();
+        assert_eq!(kept.len(), 2);
     }
 
     #[tokio::test]

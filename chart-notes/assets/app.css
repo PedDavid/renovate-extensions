@@ -1,5 +1,6 @@
 /* Tailwind entry point. Build with `make css` (standalone Tailwind CLI). */
 @import "tailwindcss" source(none);
+@plugin "@tailwindcss/typography";
 @source "../templates";
 @source "./js";
 @import "./vendor/basecoat/basecoat-vega.css";
@@ -39,4 +40,41 @@
   .kv dt {
     @apply text-muted-foreground tabular-nums;
   }
+
+  /* A release and its notes, collapsible. */
+  .release {
+    @apply rounded-xl border bg-card text-card-foreground;
+  }
+  .release > summary {
+    @apply flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-3 select-none [&::-webkit-details-marker]:hidden;
+  }
+  .release > summary:focus-visible {
+    @apply rounded-xl outline-2 outline-ring;
+  }
+  .release-chevron {
+    @apply self-center text-muted-foreground transition-transform [&>svg]:size-4;
+  }
+  .release[open] .release-chevron {
+    @apply rotate-90;
+  }
+  .release-body {
+    @apply border-t px-4 py-4;
+  }
+  /* GitHub's notes: wide tables and code scroll instead of overflowing. */
+  .release-body .prose :where(table, pre) {
+    @apply block max-w-full overflow-x-auto;
+  }
+  .release-body .prose :where(img) {
+    @apply inline max-w-full;
+  }
+}
+
+/* Inline code as GitHub shows it: a tinted box, no backticks. Unlayered,
+   because the typography plugin's rules are in the utilities layer. */
+.release-body .prose code:not(pre code) {
+  @apply rounded bg-muted px-1 py-0.5 font-normal;
+}
+.release-body .prose code:not(pre code)::before,
+.release-body .prose code:not(pre code)::after {
+  content: none;
 }

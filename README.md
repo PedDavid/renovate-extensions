@@ -16,9 +16,10 @@ drops the chart's `appVersion`, so no PR template can link to the app's notes
 directly.
 
 `GET /<chart>?from=<version>&to=<version>` reads `appVersion` for both chart
-versions from the chart repository's `index.yaml`, then lists the app's stable
-GitHub releases in between, with a link to the full diff. When the app version
-didn't change, it says so; a downgrade lists what it rolls back.
+versions from the chart repository's `index.yaml`. It then shows the release
+notes of every stable app release in between, newest first, with a link to
+the full diff. When the app version didn't change, it says so; a downgrade
+lists what it rolls back.
 
 ![Notes for an alloy bump](docs/screenshots/notes.png)
 
@@ -75,8 +76,15 @@ Entries are checked at startup: an unknown field, a non-http(s) `repo` or an
 
 ### Upstreams
 
-- **Caching.** Each Helm index and each app's releases are cached in memory
-  for `cacheTtl` (10 minutes). Concurrent requests for the same one share a
+- **Release notes.** GitHub renders each release's notes: issue links,
+  mentions and commit references come out as on the release page. chart-notes
+  removes anything that isn't safe to embed (scripts, styles, event
+  handlers, non-http links), and the page only loads images from GitHub's
+  hosts. Each release's notes take one API request. A page loads the 20
+  newest and links to any older ones.
+- **Caching.** Each Helm index, each app's release list and each release's
+  notes are cached in memory for `cacheTtl` (10 minutes). Notes nobody has
+  looked at for a week are dropped. Concurrent requests for the same one share a
   single fetch. Refreshes are conditional (ETag), so an unchanged index isn't
   downloaded again and an unchanged release list doesn't count against
   GitHub's rate limit.

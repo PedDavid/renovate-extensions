@@ -202,3 +202,28 @@ async fn health_endpoints() {
     let (status, _, _) = get(ops_router(metrics), "/readyz", &[]).await;
     assert_eq!(status, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn notes_show_each_release_with_its_release_notes() {
+    let (status, _, body) = get(demo_app(), "/alloy?from=1.3.0&to=1.4.0", &[]).await;
+    assert_eq!(status, StatusCode::OK);
+    // GitHub's rendering, sanitized, with links opening in a new tab.
+    assert!(body.contains("<code>otelcol.receiver.tcplog</code>"));
+    assert!(body.contains(
+        r#"<a href="https://github.com/grafana/alloy/pull/4501" target="_blank" rel="noopener noreferrer nofollow">#4501</a>"#
+    ));
+    assert!(body.contains("<h3>Breaking changes</h3>"));
+    // v1.10.3 was published without notes.
+    assert!(body.contains("Published without notes."));
+    assert_eq!(body.matches("<details class=\"release\" open>").count(), 4);
+}
+
+#[tokio::test]
+async fn release_note_images_from_github_are_allowed() {
+    let (_, headers, _) = get(demo_app(), "/alloy?from=1.3.0&to=1.4.0", &[]).await;
+    let csp = headers[header::CONTENT_SECURITY_POLICY].to_str().unwrap();
+    assert!(
+        csp.contains("img-src 'self' data: https://github.com https://*.githubusercontent.com;")
+    );
+    assert!(csp.contains("script-src 'self';"));
+}

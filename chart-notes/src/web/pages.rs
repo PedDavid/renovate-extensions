@@ -227,6 +227,10 @@ async fn versions_page(
     Ok((Html(page.render()?).into_response(), false))
 }
 
+/// How many releases' notes a page loads. A bump spanning more lists the
+/// rest with links only.
+const MAX_NOTES: usize = 20;
+
 #[derive(Template)]
 #[template(path = "notes.html")]
 struct NotesPage {
@@ -245,6 +249,8 @@ struct NotesPage {
     releases_url: String,
     /// Why the releases couldn't be listed.
     releases_error: String,
+    /// Why some releases' notes couldn't be loaded (the first error).
+    notes_error: String,
     /// Why some of what's shown is an older copy.
     stale: Vec<String>,
     fetched_rel: String,
@@ -293,7 +299,39 @@ async fn notes_page(
         }
     }
     let between = notes::releases_between(&releases, &old_app, &new_app);
-    let degraded = !releases_error.is_empty() || !stale.is_empty();
+    let mut rows: Vec<ReleaseRow> = between.iter().map(|r| ReleaseRow::new(r, now)).collect();
+    // Each release's notes are a request of their own (cached): load the
+    // newest ones, in parallel, and link to the rest.
+    let loaded = futures::future::join_all(
+        between
+            .iter()
+            .take(MAX_NOTES)
+            .map(|r| state.inner.sources.notes(&chart.app, &r.tag_name)),
+    )
+    .await;
+    let mut notes_error = String::new();
+    for (row, result) in rows.iter_mut().zip(loaded) {
+        match result {
+            Ok(n) => {
+                stale.extend(n.stale.iter().cloned());
+                match &n.value.html {
+                    Some(html) => {
+                        row.notes_html = html.clone();
+                        row.notes = "shown";
+                    }
+                    None => row.notes = "empty",
+                }
+            }
+            Err(e) => {
+                row.notes = "failed";
+                if notes_error.is_empty() {
+                    notes_error = e.to_string();
+                }
+            }
+        }
+    }
+    stale.dedup();
+    let degraded = !releases_error.is_empty() || !notes_error.is_empty() || !stale.is_empty();
     let page = NotesPage {
         layout: Layout::new(
             state,
@@ -315,8 +353,9 @@ async fn notes_page(
             Direction::Downgrade => "downgrade",
             Direction::Unknown => "unknown",
         },
-        releases: between.iter().map(|r| ReleaseRow::new(r, now)).collect(),
+        releases: rows,
         releases_error,
+        notes_error,
         stale,
         fetched_rel: relative(fetched_at, now),
     };

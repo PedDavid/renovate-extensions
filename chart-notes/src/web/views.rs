@@ -151,6 +151,11 @@ pub struct ReleaseRow {
     pub url: Option<String>,
     pub published_date: String,
     pub published_rel: String,
+    /// Sanitized HTML (see `notes::sanitize`), empty when there's none.
+    pub notes_html: String,
+    /// "shown", "empty" (published without notes), "failed" or "skipped"
+    /// (past the number of releases whose notes are loaded).
+    pub notes: &'static str,
 }
 
 impl ReleaseRow {
@@ -167,6 +172,8 @@ impl ReleaseRow {
             url: safe_link(&r.html_url),
             published_date: r.published_at.map(fmt_date).unwrap_or_default(),
             published_rel: r.published_at.map(|t| relative(t, now)).unwrap_or_default(),
+            notes_html: String::new(),
+            notes: "skipped",
         }
     }
 

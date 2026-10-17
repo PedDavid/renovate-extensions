@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col gap-6">
+  <a href="/" class="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-4">
+    {% include "icons/chevron-left.svg" %} All charts
+  </a>
+
+  <div class="flex flex-col gap-1">
+    <h1 class="text-2xl font-semibold tracking-tight">{{ chart.name }}</h1>
+    {% include "partials/chart_meta.html" %}
+  </div>
+  {% include "partials/chart_note.html" %}
+
+  {% if !stale.is_empty() %}
+  <div class="alert" role="status">
+    {% include "icons/history.svg" %}
+    <h2>Showing the index from {{ fetched_rel }}</h2>
+    <section><p>Refreshing it failed: {{ stale }}</p></section>
+  </div>
+  {% endif %}
+
+  {% if options.len() >= 2 %}
+  <form method="get" action="/{{ chart.name }}" class="card">
+    <header>
+      <h2>Compare versions</h2>
+      <p>Pick any two chart versions to see the app releases between them.</p>
+    </header>
+    <section class="flex flex-wrap items-end gap-3 [&>.field]:w-auto">
+      <div class="field">
+        <label for="from">From</label>
+        <select id="from" name="from" class="select">
+          {% for v in options %}<option{% if v.as_str() == from.as_str() %} selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="to">To</label>
+        <select id="to" name="to" class="select">
+          {% for v in options %}<option{% if v.as_str() == to.as_str() %} selected{% endif %}>{{ v }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn">{% include "icons/git-compare.svg" %} Compare</button>
+    </section>
+  </form>
+  {% endif %}
+
+  {% if rows.is_empty() %}
+  <div class="empty rounded-lg border border-dashed">
+    <header>
+      <figure>{% include "icons/package.svg" %}</figure>
+      <h3>No versions</h3>
+      <p>The repository's index.yaml has no <code>{{ chart.name }}</code> entries.</p>
+    </header>
+  </div>
+  {% else %}
+  <div class="table-container rounded-lg border">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>App version</th>
+          <th class="hidden sm:table-cell">Released</th>
+          <th class="text-end"><span class="sr-only">Notes</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="font-medium tabular-nums">{{ row.version }}</td>
+          <td class="tabular-nums">
+            {% if row.app_version.is_empty() %}<span class="text-muted-foreground">—</span>{% else %}<code class="text-xs">{{ row.app_version }}</code>{% endif %}
+            {% if row.app_changed %}<span class="badge ms-1" data-variant="secondary">new app</span>{% endif %}
+          </td>
+          <td class="hidden sm:table-cell text-muted-foreground">{% if !row.created_date.is_empty() %}<span title="{{ row.created_date }}">{{ row.created_rel }}</span>{% endif %}</td>
+          <td class="text-end">
+            {% if let Some(href) = row.notes_href %}
+            <a class="btn" data-variant="ghost" data-size="sm" href="{{ href }}">Notes {% include "icons/arrow-right.svg" %}</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-xs text-muted-foreground">Index fetched {{ fetched_rel }}.</p>
+  {% endif %}
+</div>
+{% endblock %}

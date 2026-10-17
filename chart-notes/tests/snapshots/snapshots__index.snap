@@ -1,0 +1,264 @@
+---
+source: chart-notes/tests/snapshots.rs
+expression: html
+---
+<!doctype html>
+<html lang="en" class="" data-palette="neutral">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"allowScriptTags":false}'>
+  <title>Charts · chart-notes</title>
+  <link rel="stylesheet" href="/assets/dist/app.css?v=[hash]">
+  <link rel="icon" href="/assets/dist/favicon.svg?v=[hash]" type="image/svg+xml">
+  <script src="/assets/vendor/htmx/htmx.min.js?v=[hash]" defer></script>
+  <script src="/assets/js/app.js?v=[hash]" defer></script>
+</head>
+<body class="min-h-screen bg-background text-foreground antialiased">
+  
+  <div class="bg-primary text-primary-foreground text-center text-xs py-1">Demo mode: sample data, nothing is looked up.</div>
+  
+  <header class="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+    <div class="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
+      <a href="/" class="flex items-center gap-2 font-semibold [&>svg]:size-5">
+        <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+  <path d="M12 22V12" />
+  <polyline points="3.29 7 12 12 20.71 7" />
+  <path d="m7.5 4.27 9 5.15" />
+</svg>
+        <span>chart-notes</span>
+      </a>
+      <div class="ms-auto flex items-center gap-1">
+        <button type="button" class="btn hidden sm:inline-flex text-muted-foreground" data-variant="outline" data-size="sm" data-palette-open aria-label="Search charts" aria-keyshortcuts="Control+K Meta+K">
+          <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+          <span class="pe-4">Search charts…</span>
+          <kbd class="kbd">⌘K</kbd>
+        </button>
+        <button type="button" class="btn sm:hidden" data-variant="ghost" data-size="icon" data-palette-open aria-label="Search charts">
+          <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+        </button>
+        <button type="button" class="btn" data-variant="ghost" data-size="icon" data-theme-toggle aria-label="Toggle dark mode">
+          <span class="dark:hidden"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" />
+</svg></span>
+          <span class="hidden dark:inline"><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" />
+</svg></span>
+        </button>
+        <button type="button" class="btn" data-variant="ghost" data-size="icon" data-palette-cycle aria-label="Change colour palette" title="Colour palette">
+          <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+  <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+  <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+  <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+  <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+</svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main class="mx-auto max-w-5xl px-4 py-6">
+    
+<div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-1">
+    <h1 class="text-2xl font-semibold tracking-tight">Charts</h1>
+    <p class="text-sm text-muted-foreground">Renovate's Helm PRs link here for what changed in the app a chart packages, not just in the chart.</p>
+  </div>
+
+  
+  <div class="table-container rounded-lg border">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Chart</th>
+          <th>App</th>
+          <th class="hidden md:table-cell">Helm repository</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>
+            <a href="/alloy" class="font-medium hover:underline">alloy</a>
+            
+          </td>
+          <td><a href="https://github.com/grafana/alloy" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">grafana/alloy</a></td>
+          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://grafana.github.io/helm-charts">grafana.github.io</code></td>
+        </tr>
+        
+        <tr>
+          <td>
+            <a href="/kube-prometheus-stack" class="font-medium hover:underline">kube-prometheus-stack</a>
+            <span class="ms-1 inline-flex align-middle text-muted-foreground [&>svg]:size-3.5" title="This chart&#39;s appVersion is prometheus-operator&#39;s. Prometheus, Alertmanager and the other bundled images can change without it."><svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="10" />
+  <path d="M12 16v-4" />
+  <path d="M12 8h.01" />
+</svg><span class="sr-only">This chart&#39;s appVersion is prometheus-operator&#39;s. Prometheus, Alertmanager and the other bundled images can change without it.</span></span>
+          </td>
+          <td><a href="https://github.com/prometheus-operator/prometheus-operator" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">prometheus-operator/prometheus-operator</a></td>
+          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://prometheus-community.github.io/helm-charts">prometheus-community.github.io</code></td>
+        </tr>
+        
+        <tr>
+          <td>
+            <a href="/offline" class="font-medium hover:underline">offline</a>
+            
+          </td>
+          <td><a href="https://github.com/example/offline" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">example/offline</a></td>
+          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://charts.invalid/">charts.invalid</code></td>
+        </tr>
+        
+        <tr>
+          <td>
+            <a href="/traefik" class="font-medium hover:underline">traefik</a>
+            
+          </td>
+          <td><a href="https://github.com/traefik/traefik" class="text-muted-foreground hover:text-foreground hover:underline" target="_blank" rel="noopener noreferrer">traefik/traefik</a></td>
+          <td class="hidden md:table-cell text-muted-foreground"><code class="text-xs" title="https://traefik.github.io/charts">traefik.github.io</code></td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+
+  <div class="card">
+    <header>
+      <h2>Renovate config</h2>
+      <p>Adds an <em>App notes</em> column to Helm chart PRs. Charts from OCI registries aren't covered.</p>
+    </header>
+    <section>
+      <pre class="overflow-x-auto rounded-md bg-muted p-4 text-xs"><code>&#34;packageRules&#34;: [
+  {
+    &#34;matchDatasources&#34;: [&#34;helm&#34;],
+    // Renovate&#39;s default columns plus this one.
+    &#34;prBodyColumns&#34;: [&#34;Package&#34;, &#34;Type&#34;, &#34;Update&#34;, &#34;Change&#34;, &#34;Pending&#34;, &#34;App notes&#34;],
+    &#34;prBodyDefinitions&#34;: {
+      &#34;App notes&#34;: &#34;[app notes](https://chart-notes.example.com/{{{packageName}}}?from={{{currentVersion}}}&#38;to={{{newVersion}}})&#34;
+    }
+  }
+]</code></pre>
+    </section>
+  </div>
+</div>
+
+  </main>
+  <dialog id="command-palette" class="command-dialog" aria-label="Search charts">
+    <div class="command">
+      <header>
+        <svg
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" />
+</svg>
+        <input type="search" name="q" placeholder="Search charts…" autocomplete="off" aria-label="Search charts"
+               role="combobox" aria-autocomplete="list" aria-controls="command-results" aria-expanded="false"
+               hx-get="/search" hx-trigger="input changed delay:150ms, search, palette-open" hx-target="#command-results">
+      </header>
+      <div id="command-results" role="listbox" aria-label="Charts" data-empty="No charts found."></div>
+    </div>
+  </dialog>
+</body>
+</html>

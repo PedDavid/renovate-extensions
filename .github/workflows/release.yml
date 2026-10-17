@@ -9,12 +9,12 @@ permissions:
   packages: write
 
 jobs:
-  chart-notes:
+  chart-notes-image:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -34,16 +34,17 @@ jobs:
             echo "first=true" >> "$GITHUB_OUTPUT"
           fi
       - id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: ${{ steps.version.outputs.image }}
           tags: |
             type=sha
             type=raw,value=main
             type=raw,value=${{ steps.version.outputs.app }},enable=${{ steps.version.outputs.first == 'true' }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
-          context: chart-notes
+          context: .
+          file: chart-notes/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -51,3 +52,28 @@ jobs:
           cache-to: type=gha,mode=max
       - name: The chart's default image exists
         run: docker buildx imagetools inspect "${{ steps.version.outputs.image }}:${{ steps.version.outputs.app }}"
+
+  # Publishes the chart to oci://ghcr.io/<owner>/charts/chart-notes. Like the
+  # image's appVersion tag, each chart version is pushed once, the first time
+  # it is seen, and never overwritten: chart changes need a version bump.
+  chart-notes-chart:
+    needs: chart-notes-image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 2
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+      - run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - run: |
+          version=$(yq '.version' deploy/helm/chart-notes/Chart.yaml)
+          repo="oci://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/charts"
+          if helm show chart "$repo/chart-notes" --version "$version" >/dev/null 2>&1; then
+            echo "chart-notes $version is already published"
+            if ! git diff --quiet HEAD^ HEAD -- deploy/helm/chart-notes; then
+              echo "::warning::deploy/helm/chart-notes changed but its version is still $version, so the change was not published"
+            fi
+            exit 0
+          fi
+          helm package deploy/helm/chart-notes -d dist
+          helm push "dist/chart-notes-$version.tgz" "$repo"

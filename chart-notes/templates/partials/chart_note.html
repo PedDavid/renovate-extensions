@@ -1,0 +1,7 @@
+{% if !chart.note.is_empty() %}
+<div class="alert" role="note">
+  {% include "icons/info.svg" %}
+  <h2>Note</h2>
+  <section><p>{{ chart.note }}</p></section>
+</div>
+{% endif %}

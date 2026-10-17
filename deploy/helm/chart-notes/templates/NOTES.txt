@@ -1,0 +1,16 @@
+chart-notes is running.
+
+{{- with include "chart-notes.publicUrl" . }}
+
+Open {{ . }} for the Renovate config that links Helm chart PRs to it.
+{{- else }}
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "chart-notes.fullname" . }} 8080:{{ .Values.service.port }}
+
+then open http://localhost:8080 for the Renovate config that links Helm
+chart PRs to it.
+{{- end }}
+{{- if not .Values.github.existingSecret }}
+
+Without github.existingSecret, GitHub allows 60 API requests an hour.
+{{- end }}

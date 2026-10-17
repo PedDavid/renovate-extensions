@@ -1,0 +1,40 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:recommended",
+    // Actions and base images by digest, with the version in a comment.
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests",
+  ],
+  lockFileMaintenance: { enabled: true },
+  customManagers: [
+    {
+      // The toolchain rustup installs, in step with the Dockerfile's rust image.
+      customType: "regex",
+      managerFilePatterns: ["/^rust-toolchain\\.toml$/"],
+      matchStrings: ['channel = "(?<currentValue>\\d+\\.\\d+)"'],
+      depNameTemplate: "rust",
+      datasourceTemplate: "docker",
+    },
+    {
+      // The standalone Tailwind CLI `make css` and CI use.
+      customType: "regex",
+      managerFilePatterns: ["/^Makefile$/", "/^\\.github/workflows/.+\\.ya?ml$/"],
+      matchStrings: ["tailwindcss/releases/(?:tag|download)/v(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      depNameTemplate: "tailwindlabs/tailwindcss",
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v(?<version>.+)$",
+    },
+  ],
+  packageRules: [
+    {
+      groupName: "rust toolchain",
+      matchDepNames: ["rust"],
+    },
+    {
+      // A Tailwind bump changes the generated CSS: `make css` on the branch.
+      matchDepNames: ["tailwindlabs/tailwindcss"],
+      prBodyNotes: ["Run `make css` and commit `chart-notes/assets/dist/app.css`, or the `css` job fails."],
+    },
+  ],
+}

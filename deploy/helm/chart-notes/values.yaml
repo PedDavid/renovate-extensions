@@ -1,26 +1,35 @@
 image:
   repository: ghcr.io/peddavid/renovate-extensions/chart-notes
-  # Defaults to the chart's appVersion.
-  tag: ""
+  tag: ""  # defaults to the chart appVersion
   pullPolicy: IfNotPresent
 
-# Charts on top of the image's bundled charts.json, or replacing its entries.
-# Keyed by Renovate's packageName:
+# URL the UI is reached at, shown in the Renovate config on its front page.
+# Defaults to https://<ingress.host> when the Ingress is enabled.
+publicUrl: ""
+
+# Charts on top of the image's bundled list (chart-notes/charts.yaml), or
+# replacing its entries. Keyed by Renovate's packageName:
 #   my-chart:
-#     repo: https://charts.example.com   # Helm repo serving index.yaml
-#     app: owner/repo                    # GitHub repo with the app's releases
-#     note: optional caveat shown on the page
+#     repo: https://charts.example.com   # Helm repository serving index.yaml
+#     app: owner/repo                    # GitHub repository with the app's releases
+#     note: Optional caveat shown on the page.
 charts: {}
 
-# Unauthenticated GitHub allows 60 API requests an hour; any token without
-# scopes lifts that to 5000.
+# Unauthenticated, GitHub allows 60 API requests an hour; any token, even
+# one without scopes, allows 5000. The Secret is mounted as a file.
 github:
   existingSecret: ""
   key: token
 
+# How long Helm indexes and GitHub releases are cached. Refreshes are
+# conditional (ETag), and a failed one serves the cached copy.
+cacheTtl: 10m
+
 service:
+  type: ClusterIP
   port: 80
 
+# The pages are public: Renovate PRs link to them.
 ingress:
   enabled: false
   className: ""
@@ -28,4 +37,29 @@ ingress:
   host: chart-notes.example.com
   tls: []
 
-resources: {}
+serviceMonitor:
+  enabled: false
+  interval: 60s
+  labels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    # Some Helm indexes (grafana's) are tens of megabytes of YAML.
+    memory: 256Mi
+
+logJson: true
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

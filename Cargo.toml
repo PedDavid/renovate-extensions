@@ -1,0 +1,3 @@
+[workspace]
+members = ["chart-notes"]
+resolver = "3"

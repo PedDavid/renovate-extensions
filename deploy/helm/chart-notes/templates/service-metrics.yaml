@@ -1,0 +1,18 @@
+# /metrics, /healthz and /readyz get their own ClusterIP Service that
+# service.type never changes, so exposing the UI never exposes them.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart-notes.fullname" . }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart-notes.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "chart-notes.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: metrics
+      port: 9090
+      targetPort: metrics

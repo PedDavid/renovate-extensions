@@ -1,0 +1,31 @@
+image:
+  repository: ghcr.io/peddavid/renovate-extensions/chart-notes
+  # Defaults to the chart's appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Charts on top of the image's bundled charts.json, or replacing its entries.
+# Keyed by Renovate's packageName:
+#   my-chart:
+#     repo: https://charts.example.com   # Helm repo serving index.yaml
+#     app: owner/repo                    # GitHub repo with the app's releases
+#     note: optional caveat shown on the page
+charts: {}
+
+# Unauthenticated GitHub allows 60 API requests an hour; any token without
+# scopes lifts that to 5000.
+github:
+  existingSecret: ""
+  key: token
+
+service:
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: chart-notes.example.com
+  tls: []
+
+resources: {}

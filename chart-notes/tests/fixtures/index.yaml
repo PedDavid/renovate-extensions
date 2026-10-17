@@ -1,0 +1,33 @@
+apiVersion: v1
+entries:
+  alloy:
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+    apiVersion: v2
+    appVersion: v1.20.1
+    created: "2026-10-08T17:41:54.542Z"
+    dependencies:
+    - name: crds
+      repository: ""
+      version: 0.0.0
+    digest: 6c2b7df23e39438bb11f1e1fcf19eb9eb7c8bfeab7d49b7c975b6212abd0f99a
+    name: alloy
+    urls:
+    - https://github.com/grafana/helm-charts/releases/download/alloy-1.13.1/alloy-1.13.1.tgz
+    version: 1.13.1
+  - apiVersion: v2
+    appVersion: v1.20.0
+    name: alloy
+    version: 1.13.0
+  loki:
+  - appVersion: 3.7.8
+    name: loki
+    version: 18.17.0
+  pyroscope:
+    - appVersion: "2.4.0"
+      name: pyroscope
+      version: "2.4.0"
+    - appVersion: '2.3.1'
+      name: pyroscope
+      version: '2.3.1'
+generated: "2026-10-17T01:18:11.521Z"

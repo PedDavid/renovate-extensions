@@ -1,0 +1,11 @@
+{{- if .Values.charts }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "chart-notes.labels" . | nindent 4 }}
+data:
+  charts.json: |
+    {{- toPrettyJson .Values.charts | nindent 4 }}
+{{- end }}

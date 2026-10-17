@@ -127,14 +127,39 @@ seen: chart changes need a version bump to be published.
 ### Developing
 
 ```sh
-make demo        # http://localhost:8080, sample data, no network
-make check       # fmt, clippy, tests: what CI runs
-make css         # after changing templates or assets/app.css (Tailwind v4 standalone CLI)
-make helm-lint   # lint and render the chart, plus deploy/helm/tests/render.sh (needs yq)
-make image       # build the container image
+make demo             # http://localhost:8080, sample data, no network
+make check            # fmt, clippy, tests: what CI's check job runs
+make visual-browsers  # once: the Chromium the Playwright driver expects
+make visual           # browser tests: the ⌘K palette and the screenshots
+make css              # after changing templates or assets/app.css (Tailwind v4 standalone CLI)
+make helm-lint        # lint and render the chart, plus deploy/helm/tests/render.sh (needs yq)
+make image            # build the container image
 ```
 
-The tests cover the pages against the demo data, the Helm and GitHub clients
-against fake servers (caching, ETags, pagination, rate limits, stale copies),
-the rendered HTML (insta snapshots in `chart-notes/tests/snapshots`; review
-changes with `cargo insta review`), and WCAG contrast of every colour palette.
+The `--demo` pages are rendered at a fixed moment (`demo_state` in
+`chart-notes/tests/common/mod.rs`), and the Helm and GitHub clients are tested
+against fake servers (caching, ETags, pagination, rate limits, stale copies).
+The pages are checked three ways:
+
+- **HTML snapshots** (`tests/snapshots.rs`, [insta](https://insta.rs)) run with
+  `cargo test`. After an intended markup change, accept it with
+  `cargo insta review`.
+- **Screenshots** (`tests/visual.rs`,
+  [playwright-rs](https://github.com/padamson/playwright-rust)) drive Chromium
+  against the router in-process. They cover the chart list (light, and dark
+  with a palette), a chart's versions, notes for an upgrade, a downgrade, the
+  same app version, a chart note, GitHub being down, a 404 and the ⌘K palette.
+  Each is compared with `chart-notes/tests/screenshots/*.png`. The test-only
+  Playwright driver brings its own Node.js.
+- **Behaviour** (`tests/palette.rs`, same harness) checks the ⌘K palette's
+  ARIA combobox state while moving through results, and that reopening it
+  with a search still in flight never follows a stale result.
+
+Fonts and antialiasing vary between machines, so the screenshot baselines are
+the ones CI's `visual` job renders on `ubuntu-24.04`. When that job fails, its
+`screenshots` artifact has each `-actual.png` and `-diff.png`. Running the CI
+workflow by hand with *update screenshots* ticked returns a full new set to
+commit into `chart-notes/tests/screenshots/`.
+
+WCAG contrast of every colour palette is checked from the CSS
+(`tests/contrast.rs`).

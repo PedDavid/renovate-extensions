@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update-screenshots:
+        description: Render new screenshot baselines (download them from the run's artifact)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -20,6 +26,31 @@ jobs:
       - run: rustup toolchain install
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - run: make check
+    env:
+      # The browser tests are ignored here; the visual job runs them.
+      PLAYWRIGHT_SKIP_DRIVER_DOWNLOAD: "1"
+
+  visual:
+    # Pinned so fonts and rendering only change when the baselines do.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install Chromium for the pinned Playwright driver
+        run: cargo run --locked --package chart-notes --example install-browsers -- chromium --with-deps
+      - name: Browser tests (palette and screenshots)
+        if: ${{ !inputs.update-screenshots }}
+        run: make visual
+      - name: Render new baselines
+        if: ${{ inputs.update-screenshots }}
+        run: make visual-update
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ always() }}
+        with:
+          name: screenshots
+          path: chart-notes/tests/screenshots/
+          if-no-files-found: ignore
 
   helm:
     runs-on: ubuntu-latest

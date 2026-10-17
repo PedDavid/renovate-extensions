@@ -53,6 +53,71 @@
     @apply border-border bg-transparent text-foreground;
   }
 
+  /* Tabs over the notes: links (each tab has its own URL) styled as tabs. */
+  .tab-bar {
+    @apply -mb-px flex flex-wrap gap-1;
+  }
+  .tab-bar [role='tab'] {
+    @apply border-b-2 border-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring;
+  }
+  .tab-bar [role='tab'][aria-selected='true'] {
+    @apply border-foreground font-semibold text-foreground;
+  }
+  .tab-count {
+    @apply font-normal text-muted-foreground;
+  }
+
+  /* Chart and app releases in one list, dated on the left. */
+  .timeline {
+    @apply m-0 flex list-none flex-col gap-3 p-0;
+  }
+  .timeline > li {
+    @apply grid grid-cols-1 gap-1 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-4;
+  }
+  .timeline-date {
+    @apply text-xs text-muted-foreground sm:pt-3.5 sm:text-end sm:text-sm;
+  }
+  /* Chart releases outlined, app releases filled: told apart by more than
+     colour. */
+  .badge.kind-badge[data-kind='app'] {
+    @apply border-transparent bg-primary text-primary-foreground;
+  }
+  .badge.kind-badge[data-kind='chart'] {
+    @apply border-border bg-transparent text-foreground;
+  }
+
+  /* The values diff. */
+  .values-diff {
+    @apply overflow-x-auto font-mono text-xs leading-relaxed;
+  }
+  .diff-hunk {
+    @apply border-y bg-muted px-3 py-1 text-muted-foreground first:border-t-0;
+  }
+  .diff-line {
+    @apply grid min-w-max grid-cols-[3rem_3rem_1.25rem_1fr];
+  }
+  .diff-line[data-kind='add'] {
+    @apply bg-green-500/10;
+  }
+  .diff-line[data-kind='del'] {
+    @apply bg-red-500/10;
+  }
+  .diff-num {
+    @apply select-none pe-2 text-end text-muted-foreground;
+  }
+  .diff-sign {
+    @apply select-none font-semibold;
+  }
+  .diff-line[data-kind='add'] .diff-sign {
+    @apply text-green-700 dark:text-green-400;
+  }
+  .diff-line[data-kind='del'] .diff-sign {
+    @apply text-red-700 dark:text-red-400;
+  }
+  .diff-text {
+    @apply whitespace-pre;
+  }
+
   /* A release and its notes, collapsible. */
   .release {
     @apply rounded-xl border bg-card text-card-foreground;

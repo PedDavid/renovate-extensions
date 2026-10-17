@@ -1,0 +1,46 @@
+<div id="notes" class="flex flex-col gap-4">
+  {% include "partials/tabs.html" %}
+  {% if let Some(e) = diff.error %}
+  <div class="alert" data-variant="destructive" role="alert">
+    {% include "icons/triangle-alert.svg" %}
+    <h2>Couldn't read the chart's values</h2>
+    <section><p>{{ e }}</p></section>
+  </div>
+  {% else if diff.hunks.is_empty() %}
+  <div class="empty rounded-lg border border-dashed">
+    <header>
+      <figure>{% include "icons/package.svg" %}</figure>
+      <h3>Same default values</h3>
+      <p>The chart's <code>values.yaml</code> didn't change between {{ from }} and {{ to }}.</p>
+    </header>
+  </div>
+  {% else %}
+  <div class="flex flex-wrap gap-2 text-sm">
+    <span class="badge" data-variant="outline">{{ diff.summary.added.len() }} {% if diff.summary.added.len() == 1 %}key{% else %}keys{% endif %} added</span>
+    <span class="badge" data-variant="outline">{{ diff.summary.changed.len() }} {% if diff.summary.changed.len() == 1 %}default{% else %}defaults{% endif %} changed</span>
+    {% if diff.summary.removed.is_empty() %}
+    <span class="badge" data-variant="outline">no keys removed</span>
+    {% else %}
+    <span class="badge" data-variant="destructive">{{ diff.summary.removed.len() }} {% if diff.summary.removed.len() == 1 %}key{% else %}keys{% endif %} removed: check your values</span>
+    {% endif %}
+  </div>
+  {% if !diff.summary.removed.is_empty() %}
+  <p class="text-sm">Removed: {% for k in diff.summary.removed %}<code class="text-xs">{{ k }}</code>{% if !loop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+  <div class="rounded-lg border overflow-hidden">
+    <div class="flex flex-wrap items-baseline gap-2 border-b px-4 py-3">
+      <span class="font-semibold font-mono text-sm">values.yaml</span>
+      <span class="text-sm text-muted-foreground">{{ chart.name }} {{ from }} → {{ to }}</span>
+    </div>
+    <div class="values-diff">
+      {% for h in diff.hunks %}
+      <div class="diff-hunk">@@ {% if h.section.is_empty() %}top{% else %}{{ h.section }}{% endif %} @@</div>
+      {% for l in h.lines %}
+      <div class="diff-line" data-kind="{{ l.kind }}"><span class="diff-num">{% if let Some(n) = l.old %}{{ n }}{% endif %}</span><span class="diff-num">{% if let Some(n) = l.new %}{{ n }}{% endif %}</span><span class="diff-sign">{% if l.kind == "add" %}+{% else if l.kind == "del" %}−{% else %} {% endif %}</span><span class="diff-text">{{ l.text }}</span></div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+  <p class="text-xs text-muted-foreground">The chart's own defaults only: your overrides aren't known here.</p>
+  {% endif %}
+</div>

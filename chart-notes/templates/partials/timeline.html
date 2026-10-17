@@ -1,0 +1,122 @@
+<div id="notes" class="flex flex-col gap-4">
+  {% include "partials/tabs.html" %}
+
+  {% for s in stale %}
+  <div class="alert" role="status">
+    {% include "icons/history.svg" %}
+    <h2>Some of this is from {{ fetched_rel }}</h2>
+    <section><p>Refreshing it failed: {{ s }}</p></section>
+  </div>
+  {% endfor %}
+  {% if !notes_error.is_empty() %}
+  <div class="alert" data-variant="destructive" role="alert">
+    {% include "icons/triangle-alert.svg" %}
+    <h2>Some notes couldn't be loaded</h2>
+    <section><p>{{ notes_error }}</p></section>
+  </div>
+  {% endif %}
+
+  {% if tab != "chart" %}
+  {% if direction == "downgrade" %}
+  <p class="text-sm">This is a downgrade: the app releases below are rolled back.</p>
+  {% endif %}
+  {% if direction == "same" %}
+  <p class="text-sm text-muted-foreground">Same app version (<code class="text-xs">{{ old_app }}</code>): only the chart changed.</p>
+  {% else if chart.app.is_empty() %}
+  <div class="alert" role="note">
+    {% include "icons/info.svg" %}
+    <h2>Which repository has the app's releases?</h2>
+    <section><p>The chart's metadata doesn't say. Set <code>overrides.{{ chart.name }}.app</code> in the Helm chart's values to a GitHub <code>owner/repo</code>.</p></section>
+  </div>
+  {% else if !releases_error.is_empty() %}
+  <div class="alert" data-variant="destructive" role="alert">
+    {% include "icons/triangle-alert.svg" %}
+    <h2>Couldn't list the app's releases</h2>
+    <section>
+      <p>{{ releases_error }}</p>
+      <p>{% if !compare_url.is_empty() %}The <a class="underline underline-offset-4" href="{{ compare_url }}" target="_blank" rel="noopener noreferrer">full diff</a> and <a{% else %}<a{% endif %} class="underline underline-offset-4" href="{{ releases_url }}" target="_blank" rel="noopener noreferrer">all releases</a> are on GitHub.</p>
+    </section>
+  </div>
+  {% else if app_count == 0 %}
+  <p class="text-sm text-muted-foreground">None of {{ chart.app }}'s recent stable releases fall between <code class="text-xs">{{ old_app }}</code> and <code class="text-xs">{{ new_app }}</code>. <a class="underline underline-offset-4" href="{{ releases_url }}" target="_blank" rel="noopener noreferrer">All releases</a></p>
+  {% endif %}
+  {% endif %}
+
+  {% if entries.is_empty() %}
+  <div class="empty rounded-lg border border-dashed">
+    <header>
+      <figure>{% include "icons/tag.svg" %}</figure>
+      <h3>Nothing listed</h3>
+      <p>{% if tab == "chart" %}No chart releases between these versions.{% else %}No releases to show for this bump.{% endif %}</p>
+    </header>
+  </div>
+  {% endif %}
+
+  <ol class="timeline">
+    {% for e in entries %}
+    <li>
+      {% if let Some(c) = e.chart %}
+      <div class="timeline-date" title="{{ c.created_date }}">{{ c.created_rel }}</div>
+      <details class="release"{% if e.open %} open{% endif %}>
+        <summary>
+          <span class="release-chevron">{% include "icons/chevron-right.svg" %}</span>
+          <span class="badge kind-badge" data-kind="chart">Chart</span>
+          <span class="font-semibold">{{ chart.name }}-{{ c.version }}</span>
+          {% if !c.app_version.is_empty() %}<span class="text-sm text-muted-foreground">ships app <code class="text-xs">{{ c.app_version }}</code></span>{% endif %}
+          {% if let Some(url) = c.url %}
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="{{ url }}" target="_blank" rel="noopener noreferrer">GitHub {% include "icons/external-link.svg" %}</a>
+          {% endif %}
+        </summary>
+        <div class="release-body">
+          {% if c.kind == "changes" %}
+          <ul class="flex flex-col gap-1.5 text-sm">
+            {% for ch in c.changes %}
+            <li class="flex flex-wrap items-baseline gap-2">
+              {% if !ch.kind.is_empty() %}<span class="badge change-kind" data-kind="{{ ch.kind }}">{{ ch.kind }}</span>{% endif %}
+              <span>{{ ch.description_html|safe }}</span>
+              {% for (name, url) in ch.links %}<a class="text-muted-foreground underline underline-offset-4 hover:text-foreground" href="{{ url }}" target="_blank" rel="noopener noreferrer nofollow">{{ name }}</a>{% endfor %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else if c.kind == "release" %}
+          <div class="prose prose-sm dark:prose-invert max-w-none">{{ c.html|safe }}</div>
+          {% else %}
+          <p class="text-sm text-muted-foreground">No changes listed for this chart version.</p>
+          {% endif %}
+        </div>
+      </details>
+      {% endif %}
+      {% if let Some(r) = e.app %}
+      <div class="timeline-date" title="{{ r.published_date }}">{{ r.published_rel }}</div>
+      <details class="release"{% if e.open %} open{% endif %}>
+        <summary>
+          <span class="release-chevron">{% include "icons/chevron-right.svg" %}</span>
+          <span class="badge kind-badge" data-kind="app">App</span>
+          <span class="font-semibold">{{ r.title }}</span>
+          {% if r.titled() %}<code class="text-xs text-muted-foreground">{{ r.tag }}</code>{% endif %}
+          {% if let Some(url) = r.url %}
+          <a class="ms-auto inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground [&>svg]:size-3.5" href="{{ url }}" target="_blank" rel="noopener noreferrer">GitHub {% include "icons/external-link.svg" %}</a>
+          {% endif %}
+        </summary>
+        <div class="release-body">
+          {% if r.notes == "shown" %}
+          <div class="prose prose-sm dark:prose-invert max-w-none">{{ r.notes_html|safe }}</div>
+          {% else if r.notes == "empty" %}
+          <p class="text-sm text-muted-foreground">Published without notes.</p>
+          {% else if r.notes == "failed" %}
+          <p class="text-sm text-muted-foreground">Couldn't load these notes. They're on the release's GitHub page.</p>
+          {% else %}
+          <p class="text-sm text-muted-foreground">Only the newest releases' notes are shown here. These are on the release's GitHub page.</p>
+          {% endif %}
+        </div>
+      </details>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+
+  <p class="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+    <span>Fetched {{ fetched_rel }}. App pre-releases are left out.</span>
+    {% if !compare_url.is_empty() %}<a class="underline underline-offset-4 hover:text-foreground" href="{{ compare_url }}" target="_blank" rel="noopener noreferrer">Full app diff</a>{% endif %}
+  </p>
+</div>

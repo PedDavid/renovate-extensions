@@ -10,7 +10,8 @@ use url::Url;
 use crate::cache::Cached;
 use crate::overrides::{self, Overrides};
 use crate::sources::{
-    Candidate, ChartIndex, ChartVersion, Release, ReleaseNotes, Releases, Sources, UpstreamError,
+    Candidate, ChartIndex, ChartValues, ChartVersion, Release, ReleaseNotes, Releases, Sources,
+    UpstreamError,
 };
 
 /// The demo's overrides: an app the lookup can't guess, with a note, and a
@@ -272,6 +273,37 @@ fn notes_html(app: &str, tag: &str) -> Option<&'static str> {
     })
 }
 
+/// A demo chart version's default values: the app's image tag, plus the
+/// options alloy's chart added or changed along the way.
+fn values(chart: &str, version: &str) -> Option<String> {
+    let v = index(chart).into_iter().find(|v| v.version == version)?;
+    let app = meta(chart)?.app;
+    let at_least = |min: &str| {
+        crate::version::parse(version)
+            .zip(crate::version::parse(min))
+            .is_some_and(|(a, b)| a.cmp_precedence(&b).is_ge())
+    };
+    let mut out = format!(
+        "image:\n  repository: {app}\n  tag: {}\n  pullPolicy: IfNotPresent\n\nreplicas: 1\n",
+        v.app_version.unwrap_or_default()
+    );
+    if chart == "alloy" {
+        out.push_str("\nalloy:\n  configMap:\n    create: true\n");
+        if at_least("1.4.0") {
+            out.push_str(
+                "  # -- Extra ports to expose on the Alloy container.\n  extraPorts: []\n",
+            );
+        }
+        out.push_str("\ncontroller:\n  type: daemonset\n");
+        if at_least("1.3.1") {
+            out.push_str("  podDisruptionBudget:\n    enabled: false\n");
+        } else {
+            out.push_str("  podDisruptionBudget: {}\n  # -- Deprecated: use podDisruptionBudget.\n  pdb: false\n");
+        }
+    }
+    Some(out)
+}
+
 /// When the demo data was "fetched".
 pub fn fetched_at() -> Timestamp {
     ts("2026-10-17T08:00:00Z")
@@ -305,6 +337,22 @@ impl Sources for DemoSources {
     async fn search(&self, chart: &str) -> Result<Cached<Vec<Candidate>>, UpstreamError> {
         Ok(Cached {
             value: Arc::new(search(chart)),
+            fetched_at: fetched_at(),
+            stale: None,
+        })
+    }
+
+    async fn values(
+        &self,
+        _repo: &Url,
+        chart: &str,
+        version: &str,
+        _package: &str,
+    ) -> Result<Cached<ChartValues>, UpstreamError> {
+        Ok(Cached {
+            value: Arc::new(ChartValues {
+                text: values(chart, version),
+            }),
             fetched_at: fetched_at(),
             stale: None,
         })

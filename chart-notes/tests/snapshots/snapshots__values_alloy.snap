@@ -1,0 +1,95 @@
+---
+source: chart-notes/tests/snapshots.rs
+expression: html
+---
+<div id="notes" class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-end justify-between gap-x-3 border-b">
+  <nav role="tablist" aria-label="What changed" class="tab-bar">
+    
+    <a role="tab" data-tab="all" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts" hx-get="/alloy/timeline?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=all" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts" aria-selected="false">
+      All <span class="tab-count">· 6</span>
+    </a>
+    
+    <a role="tab" data-tab="app" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=app" hx-get="/alloy/timeline?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=app" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=app" aria-selected="false">
+      App <span class="tab-count">· 4</span>
+    </a>
+    
+    <a role="tab" data-tab="chart" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=chart" hx-get="/alloy/timeline?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=chart" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=chart" aria-selected="false">
+      Chart <span class="tab-count">· 2</span>
+    </a>
+    
+    <a role="tab" data-tab="values" href="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=values" hx-get="/alloy/values?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts" hx-target="#notes" hx-swap="outerHTML" hx-push-url="/alloy?from=1.3.0&#38;to=1.4.0&#38;source=https%3A%2F%2Fgithub.com%2Fgrafana%2Fhelm-charts&#38;repo=https%3A%2F%2Fgrafana.github.io%2Fhelm-charts&#38;tab=values" aria-selected="true" aria-current="page">
+      Values diff <span class="tab-count">· +2 −1</span>
+    </a>
+    
+  </nav>
+</div>
+  
+  <div class="flex flex-wrap gap-2 text-sm">
+    <span class="badge" data-variant="outline">2 keys added</span>
+    <span class="badge" data-variant="outline">1 default changed</span>
+    
+    <span class="badge" data-variant="destructive">1 key removed: check your values</span>
+    
+  </div>
+  
+  <p class="text-sm">Removed: <code class="text-xs">controller.pdb</code></p>
+  
+  <div class="rounded-lg border overflow-hidden">
+    <div class="flex flex-wrap items-baseline gap-2 border-b px-4 py-3">
+      <span class="font-semibold font-mono text-sm">values.yaml</span>
+      <span class="text-sm text-muted-foreground">alloy 1.3.0 → 1.4.0</span>
+    </div>
+    <div class="values-diff">
+      
+      <div class="diff-hunk">@@ image @@</div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">1</span><span class="diff-num">1</span><span class="diff-sign"> </span><span class="diff-text">image:</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">2</span><span class="diff-num">2</span><span class="diff-sign"> </span><span class="diff-text">  repository: grafana/alloy</span></div>
+      
+      <div class="diff-line" data-kind="del"><span class="diff-num">3</span><span class="diff-num"></span><span class="diff-sign">−</span><span class="diff-text">  tag: v1.10.2</span></div>
+      
+      <div class="diff-line" data-kind="add"><span class="diff-num"></span><span class="diff-num">3</span><span class="diff-sign">+</span><span class="diff-text">  tag: v1.11.2</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">4</span><span class="diff-num">4</span><span class="diff-sign"> </span><span class="diff-text">  pullPolicy: IfNotPresent</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">5</span><span class="diff-num">5</span><span class="diff-sign"> </span><span class="diff-text"></span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">6</span><span class="diff-num">6</span><span class="diff-sign"> </span><span class="diff-text">replicas: 1</span></div>
+      
+      
+      <div class="diff-hunk">@@ alloy @@</div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">8</span><span class="diff-num">8</span><span class="diff-sign"> </span><span class="diff-text">alloy:</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">9</span><span class="diff-num">9</span><span class="diff-sign"> </span><span class="diff-text">  configMap:</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">10</span><span class="diff-num">10</span><span class="diff-sign"> </span><span class="diff-text">    create: true</span></div>
+      
+      <div class="diff-line" data-kind="add"><span class="diff-num"></span><span class="diff-num">11</span><span class="diff-sign">+</span><span class="diff-text">  # -- Extra ports to expose on the Alloy container.</span></div>
+      
+      <div class="diff-line" data-kind="add"><span class="diff-num"></span><span class="diff-num">12</span><span class="diff-sign">+</span><span class="diff-text">  extraPorts: []</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">11</span><span class="diff-num">13</span><span class="diff-sign"> </span><span class="diff-text"></span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">12</span><span class="diff-num">14</span><span class="diff-sign"> </span><span class="diff-text">controller:</span></div>
+      
+      <div class="diff-line" data-kind="ctx"><span class="diff-num">13</span><span class="diff-num">15</span><span class="diff-sign"> </span><span class="diff-text">  type: daemonset</span></div>
+      
+      <div class="diff-line" data-kind="del"><span class="diff-num">14</span><span class="diff-num"></span><span class="diff-sign">−</span><span class="diff-text">  podDisruptionBudget: {}</span></div>
+      
+      <div class="diff-line" data-kind="del"><span class="diff-num">15</span><span class="diff-num"></span><span class="diff-sign">−</span><span class="diff-text">  # -- Deprecated: use podDisruptionBudget.</span></div>
+      
+      <div class="diff-line" data-kind="del"><span class="diff-num">16</span><span class="diff-num"></span><span class="diff-sign">−</span><span class="diff-text">  pdb: false</span></div>
+      
+      <div class="diff-line" data-kind="add"><span class="diff-num"></span><span class="diff-num">16</span><span class="diff-sign">+</span><span class="diff-text">  podDisruptionBudget:</span></div>
+      
+      <div class="diff-line" data-kind="add"><span class="diff-num"></span><span class="diff-num">17</span><span class="diff-sign">+</span><span class="diff-text">    enabled: false</span></div>
+      
+      
+    </div>
+  </div>
+  <p class="text-xs text-muted-foreground">The chart's own defaults only: your overrides aren't known here.</p>
+  
+</div>

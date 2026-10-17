@@ -6,13 +6,10 @@ use axum::response::{Html, IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;
 
-use super::views::{
-    ChartReleaseRow, ChartRow, ReleaseRow, VersionRow, fmt_date, relative, version_rows,
-};
+use super::views::{ChartRow, VersionRow, relative, version_rows};
 use super::{AppError, AppState, Back};
-use crate::notes::Direction;
 use crate::overrides::valid_name;
-use crate::report::{self, Notes, ReportError};
+use crate::report::{self, ReportError};
 use crate::resolve::Hints;
 use crate::sources::Candidate;
 
@@ -28,7 +25,7 @@ pub struct Layout {
 pub const PALETTES: [&str; 5] = ["neutral", "blue", "green", "orange", "violet"];
 
 impl Layout {
-    fn new(state: &AppState, jar: &CookieJar, title: impl Into<String>) -> Layout {
+    pub(super) fn new(state: &AppState, jar: &CookieJar, title: impl Into<String>) -> Layout {
         let palette = jar
             .get("chart_notes_palette")
             .map(|c| c.value().to_string())
@@ -183,7 +180,7 @@ pub async fn search(
     Ok(Html(SearchResults { rows }.render()?).into_response())
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Clone)]
 pub struct Bump {
     #[serde(default)]
     from: Option<String>,
@@ -195,6 +192,16 @@ pub struct Bump {
     /// A repository picked among several.
     #[serde(default)]
     repo: Option<String>,
+    /// all, app, chart or values.
+    #[serde(default)]
+    tab: Option<String>,
+    /// Render everything in one response, without htmx.
+    #[serde(default)]
+    full: Option<String>,
+    /// The page's own first request for its content (counted in metrics;
+    /// switching tabs isn't).
+    #[serde(default)]
+    first: Option<String>,
 }
 
 impl Bump {
@@ -204,6 +211,23 @@ impl Bump {
 
     pub fn to(&self) -> String {
         self.to.as_deref().unwrap_or_default().trim().to_string()
+    }
+
+    pub fn tab(&self) -> &'static str {
+        match self.tab.as_deref() {
+            Some("app") => "app",
+            Some("chart") => "chart",
+            Some("values") => "values",
+            _ => "all",
+        }
+    }
+
+    pub fn full(&self) -> bool {
+        self.full.is_some()
+    }
+
+    pub fn first(&self) -> bool {
+        self.first.is_some()
     }
 
     pub fn hints(&self) -> Hints {
@@ -236,26 +260,7 @@ pub async fn chart(
     if from.is_empty() || to.is_empty() {
         return versions_page(&state, &jar, &name, &hints, &from, &to).await;
     }
-    let report = report::build(
-        &state.inner.resolver,
-        state.inner.sources.as_ref(),
-        &name,
-        &hints,
-        &from,
-        &to,
-    )
-    .await;
-    state.inner.metrics.page(match &report {
-        Ok(r) if r.degraded() => "upstream_error",
-        Ok(_) => "ok",
-        Err(ReportError::UnknownChart(_) | ReportError::Ambiguous { .. }) => "unknown_chart",
-        Err(ReportError::UnknownVersion(_)) => "unknown_version",
-        Err(ReportError::Upstream(_)) => "upstream_error",
-    });
-    match report {
-        Ok(report) => notes_page(&state, &jar, report),
-        Err(e) => Err(report_error(&state, &jar, &name, &from, &to, e)),
-    }
+    super::notes::page(&state, &jar, &name, &bump, &from, &to).await
 }
 
 #[derive(Template)]
@@ -275,7 +280,7 @@ struct CandidateRow {
 }
 
 /// The error page for a failed report, or the page to pick a repository.
-fn report_error(
+pub(super) fn report_error(
     state: &AppState,
     jar: &CookieJar,
     name: &str,
@@ -387,91 +392,6 @@ async fn versions_page(
         to,
         fetched_rel: relative(index.fetched_at, now),
         stale: index.stale.clone().unwrap_or_default(),
-    };
-    Ok(Html(page.render()?).into_response())
-}
-
-#[derive(Template)]
-#[template(path = "notes.html")]
-struct NotesPage {
-    layout: Layout,
-    chart: ChartRow,
-    from: String,
-    to: String,
-    from_date: String,
-    to_date: String,
-    old_app: String,
-    new_app: String,
-    /// "same", "upgrade", "downgrade" or "unknown".
-    direction: &'static str,
-    chart_releases: Vec<ChartReleaseRow>,
-    releases: Vec<ReleaseRow>,
-    compare_url: String,
-    releases_url: String,
-    /// Why the releases couldn't be listed.
-    releases_error: String,
-    /// Why some notes couldn't be loaded (the first error).
-    notes_error: String,
-    /// Why some of what's shown is an older copy.
-    stale: Vec<String>,
-    fetched_rel: String,
-}
-
-fn notes_page(state: &AppState, jar: &CookieJar, r: report::Report) -> Result<Response, AppError> {
-    let now = state.now();
-    let chart = ChartRow::new(&r.chart);
-    let releases = r
-        .app_releases
-        .iter()
-        .map(|a| {
-            let mut row = ReleaseRow::new(&a.release, now);
-            match &a.notes {
-                Notes::Shown(html) => {
-                    row.notes_html = html.clone();
-                    row.notes = "shown";
-                }
-                Notes::Empty => row.notes = "empty",
-                Notes::Failed => row.notes = "failed",
-                Notes::Skipped => row.notes = "skipped",
-            }
-            row
-        })
-        .collect();
-    let page = NotesPage {
-        layout: Layout::new(
-            state,
-            jar,
-            format!("{} {} → {}", r.chart.name, r.from.version, r.to.version),
-        ),
-        releases_url: if chart.app_url.is_empty() {
-            String::new()
-        } else {
-            format!("{}/releases", chart.app_url)
-        },
-        chart,
-        from: r.from.version.clone(),
-        to: r.to.version.clone(),
-        from_date: r.from.created.map(fmt_date).unwrap_or_default(),
-        to_date: r.to.created.map(fmt_date).unwrap_or_default(),
-        old_app: r.from.app_version.clone().unwrap_or_default(),
-        new_app: r.to.app_version.clone().unwrap_or_default(),
-        direction: match r.direction {
-            Direction::Same => "same",
-            Direction::Upgrade => "upgrade",
-            Direction::Downgrade => "downgrade",
-            Direction::Unknown => "unknown",
-        },
-        chart_releases: r
-            .chart_releases
-            .iter()
-            .map(|c| ChartReleaseRow::new(c, now))
-            .collect(),
-        releases,
-        compare_url: r.compare_url.clone().unwrap_or_default(),
-        releases_error: r.releases_error.clone().unwrap_or_default(),
-        notes_error: r.notes_error.clone().unwrap_or_default(),
-        stale: r.stale.clone(),
-        fetched_rel: relative(r.fetched_at, now),
     };
     Ok(Html(page.render()?).into_response())
 }

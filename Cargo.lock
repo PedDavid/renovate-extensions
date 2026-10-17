@@ -393,7 +393,7 @@ dependencies = [
 
 [[package]]
 name = "chart-notes"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "ammonia",
  "anyhow",
@@ -402,6 +402,7 @@ dependencies = [
  "axum",
  "axum-extra",
  "clap",
+ "flate2",
  "futures",
  "http-body-util",
  "insta",
@@ -415,6 +416,8 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "similar",
+ "tar",
  "thiserror",
  "tokio",
  "tower",

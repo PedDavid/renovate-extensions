@@ -1,10 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ include "chart-notes.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "chart-notes.labels" . | nindent 4 }}
 spec:
+  type: {{ .Values.service.type }}
   selector:
     {{- include "chart-notes.selectorLabels" . | nindent 4 }}
   ports:

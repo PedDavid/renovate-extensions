@@ -1,10 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ include "chart-notes.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "chart-notes.labels" . | nindent 4 }}
 spec:
+  # One replica: the cache is per process, and each replica would spend its
+  # own share of GitHub's rate limit.
   replicas: 1
   selector:
     matchLabels:
@@ -13,59 +16,97 @@ spec:
     metadata:
       labels:
         {{- include "chart-notes.selectorLabels" . | nindent 8 }}
-      {{- if .Values.charts }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
-        # Roll the pod when the charts change; they're read once at startup.
+        # The charts are read once at startup: roll the pod when they change.
         checksum/charts: {{ toJson .Values.charts | sha256sum }}
-      {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
+      automountServiceAccountToken: false
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 65534
-        runAsGroup: 65534
-        seccompProfile:
-          type: RuntimeDefault
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: chart-notes
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            - name: CHART_NOTES_CACHE_TTL
+              value: {{ .Values.cacheTtl | quote }}
+            {{- with include "chart-notes.publicUrl" . }}
+            - name: CHART_NOTES_PUBLIC_URL
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.charts }}
-            - name: CHARTS_FILE
-              value: /etc/chart-notes/charts.json
+            - name: CHART_NOTES_CHARTS_FILE
+              value: /etc/chart-notes/charts/charts.json
             {{- end }}
             {{- if .Values.github.existingSecret }}
-            - name: GITHUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.github.existingSecret }}
-                  key: {{ .Values.github.key }}
+            - name: CHART_NOTES_GITHUB_TOKEN_FILE
+              value: /etc/chart-notes/github/{{ .Values.github.key }}
+            {{- end }}
+            {{- if .Values.logJson }}
+            - name: CHART_NOTES_LOG_JSON
+              value: "true"
             {{- end }}
           ports:
             - name: http
               containerPort: 8080
-          readinessProbe:
+            - name: metrics
+              containerPort: 9090
+          livenessProbe:
             httpGet:
               path: /healthz
-              port: http
+              port: metrics
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: metrics
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-          {{- with .Values.resources }}
           resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- if .Values.charts }}
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if or .Values.charts .Values.github.existingSecret }}
           volumeMounts:
+            {{- if .Values.charts }}
             - name: charts
-              mountPath: /etc/chart-notes
+              mountPath: /etc/chart-notes/charts
               readOnly: true
+            {{- end }}
+            {{- if .Values.github.existingSecret }}
+            - name: github
+              mountPath: /etc/chart-notes/github
+              readOnly: true
+            {{- end }}
           {{- end }}
-      {{- if .Values.charts }}
+      {{- if or .Values.charts .Values.github.existingSecret }}
       volumes:
+        {{- if .Values.charts }}
         - name: charts
           configMap:
-            name: {{ .Release.Name }}
+            name: {{ include "chart-notes.fullname" . }}-charts
+        {{- end }}
+        {{- if .Values.github.existingSecret }}
+        - name: github
+          secret:
+            secretName: {{ .Values.github.existingSecret }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
       {{- end }}

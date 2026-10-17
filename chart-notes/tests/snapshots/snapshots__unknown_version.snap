@@ -1,0 +1,25 @@
+---
+source: chart-notes/tests/snapshots.rs
+expression: html
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Not found · chart-notes</title>
+  <link rel="stylesheet" href="/assets/dist/app.css">
+  <script src="/assets/js/app.js" defer></script>
+</head>
+<body class="min-h-screen bg-background text-foreground antialiased grid place-items-center p-4">
+  <div class="card w-full max-w-md">
+    <header>
+      <h2>404 · Not found</h2>
+      <p class="break-words">alloy has no version &#34;9.9.9&#34; in https://grafana.github.io/helm-charts/index.yaml.</p>
+    </header>
+    <footer>
+      <a class="btn" data-variant="outline" href="/alloy">All alloy versions</a>
+    </footer>
+  </div>
+</body>
+</html>

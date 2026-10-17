@@ -23,6 +23,12 @@ async fn assert_screenshot(page: &Page, name: &str) {
     let dir: PathBuf = [env!("CARGO_MANIFEST_DIR"), "tests", "screenshots"]
         .iter()
         .collect();
+    // Failure captures are <name>-actual.png and <name>-diff.png, which
+    // .gitignore drops: a baseline named like one would never be committed.
+    assert!(
+        !name.ends_with("-actual") && !name.ends_with("-diff"),
+        "{name}: baselines can't end in -actual or -diff"
+    );
     let baseline = dir.join(format!("{name}.png"));
     let update = std::env::var_os("UPDATE_SNAPSHOTS").is_some();
     let options = |update| {
@@ -172,7 +178,7 @@ async fn values_diff_tab() {
         .to_have_url_regex(r"/alloy\?from=1\.3\.0&to=1\.4\.0&.*tab=values$")
         .await
         .unwrap();
-    assert_screenshot(&ui.page, "values-diff").await;
+    assert_screenshot(&ui.page, "notes-values").await;
 }
 
 #[tokio::test]
